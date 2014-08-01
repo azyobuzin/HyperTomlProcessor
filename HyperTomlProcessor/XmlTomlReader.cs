@@ -38,7 +38,7 @@ namespace HyperTomlProcessor
 
         private XElement root = new XElement("root", new XAttribute("type", "object"), new XAttribute("toml", "table"));
 
-        private static readonly Dictionary<TomlNodeType, string> tomlType = new Dictionary<TomlNodeType, string>()
+        internal static readonly Dictionary<TomlNodeType, string> tomlType = new Dictionary<TomlNodeType, string>()
         {
             {TomlNodeType.BasicString, "basicString"},
             {TomlNodeType.MultilineBasicString, "multi-lineBasicString"},
@@ -89,7 +89,7 @@ namespace HyperTomlProcessor
             ValidName[0x5F] = true;
             Allow(ValidName, 0x61, 0x7A);
         }
-        private static bool IsValidName(string name)
+        internal static bool IsValidName(string name)
         {
             var bytes = Encoding.UTF8.GetBytes(name);
             if (!ValidFirstName[bytes[0]]) return false;
@@ -100,8 +100,8 @@ namespace HyperTomlProcessor
             return true;
         }
 
-        private static readonly XNamespace namespaceA = "item";
-        private static XAttribute prefixA
+        internal static readonly XNamespace namespaceA = "item";
+        internal static XAttribute prefixA
         {
             get
             {
@@ -258,9 +258,11 @@ namespace HyperTomlProcessor
         {
             get
             {
-                return this.isAttr
-                    ? this.attr.Name.NamespaceName
-                    : this.DoOnElement(elm => elm.Name.NamespaceName, "");
+                return this.NameTable.Add(
+                    this.isAttr
+                        ? this.attr.Name.NamespaceName
+                        : this.DoOnElement(elm => elm.Name.NamespaceName, "")
+                );
             }
         }
 
@@ -282,13 +284,15 @@ namespace HyperTomlProcessor
         {
             get
             {
-                return this.DoOnElement(elm => elm.GetPrefixOfNamespace(XNamespace.Get(this.NamespaceURI)) ?? "");
+                return this.NameTable.Add(
+                    this.DoOnElement(elm => elm.GetPrefixOfNamespace(XNamespace.Get(this.NamespaceURI)) ?? "", "")
+                );
             }
         }
 
-        private string GetTypeString()
+        internal static string GetJsonTypeString(TomlNodeType nodeType)
         {
-            switch (this.reader.NodeType)
+            switch (nodeType)
             {
                 case TomlNodeType.BasicString:
                 case TomlNodeType.MultilineBasicString:
@@ -302,9 +306,24 @@ namespace HyperTomlProcessor
                 case TomlNodeType.Boolean:
                     return "boolean";
                 case TomlNodeType.StartArray:
+                case TomlNodeType.StartArrayOfTable:
                     return "array";
+                case TomlNodeType.StartTable:
+                    return "object";
                 default:
-                    throw new XmlException("Invalid break.", null, this.reader.LineNumber, this.reader.LinePosition);
+                    throw new ArgumentException("nodeType is not a value type.");
+            }
+        }
+
+        private string GetTypeString()
+        {
+            try
+            {
+                return GetJsonTypeString(this.reader.NodeType);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new XmlException("Invalid break.", ex, this.reader.LineNumber, this.reader.LinePosition);
             }
         }
 
@@ -480,7 +499,7 @@ namespace HyperTomlProcessor
                     {
                         var name = ((string)this.reader.Value).Split('.');
                         var matched = this.position.Zip(name, (x, y) => x.Name == y).TakeWhile(_ => _).Count();
-                        if (matched == name.Length)
+                        if (name.Length == matched)
                         {
                             throw new XmlException("Invalid the name of the table.", null, this.reader.LineNumber, this.reader.LinePosition);
                         }
@@ -520,9 +539,12 @@ namespace HyperTomlProcessor
                             ));
                             this.nextArrayOfTableItem = (XElement)xe.LastNode;
                         }
-                        else if (name.Length == matched + 1)
+                        else if (this.position.Count == matched)
                         {
-                            xe = this.node.Parent;
+                            if (name.Length != matched + 1)
+                                throw new XmlException("Invalid the name of the array of table.", null, this.reader.LineNumber, this.reader.LinePosition);
+                            if (this.isTableContent)
+                                xe = this.node.Parent;
                             xe.RemoveNodes();
                             xe.AddFirst(new XElement(name[name.Length - 1],
                                 new XAttribute("type", "array"),
@@ -540,7 +562,8 @@ namespace HyperTomlProcessor
                         }
                         else
                         {
-                            throw new XmlException("Invalid the name of the array of table.", null, this.reader.LineNumber, this.reader.LinePosition);
+                            this.EndThisTable();
+                            this.alreadyRead = true;
                         }
                         this.isTableContent = false;
                     }
