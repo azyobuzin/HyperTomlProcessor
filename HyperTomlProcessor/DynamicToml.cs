@@ -5,6 +5,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 
 namespace HyperTomlProcessor
@@ -484,7 +485,6 @@ namespace HyperTomlProcessor
 
         private object Deserialize(Type type)
         {
-            //TODO: object のときに最適なデシリアライズを
             if (this.isArray)
             {
                 return type.IsArray
@@ -493,10 +493,18 @@ namespace HyperTomlProcessor
             }
             else
             {
-                //TODO: Dictionary<string, hoge> に対応する
-                if (type.IsAssignableFrom(typeof(Dictionary<string, object>)))
-                    return this.ToDictionary();
-
+                Type keyType;
+                Type valueType;
+                if (ReflectionUtils.TryGetDictionaryType(type, out keyType, out valueType)
+                    && keyType.IsAssignableFrom(typeof(string)))
+                {
+                    try
+                    {
+                        return this.DeserializeDictionary(type, keyType, valueType);
+                    }
+                    catch
+                    { }
+                }
                 return this.DeserializeObject(type);
             }
         }
@@ -506,21 +514,18 @@ namespace HyperTomlProcessor
             var value = ToValue(xe);
             var dt = value as DynamicToml;
             if (dt != null)
-                value = dt.Deserialize(type);
-            return typeof(IConvertible).IsAssignableFrom(type)
-                ? Convert.ChangeType(value, type) : value;
-        }
-
-        private static Type GetCollectionType(Type type)
-        {
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return type.GetGenericArguments()[0];
-            foreach (var i in type.GetInterfaces())
             {
-                if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return i.GetGenericArguments()[0];
+                if (type == typeof(DynamicToml))
+                    return dt;
+                value = dt.Deserialize(type);
             }
-            return typeof(object);
+            
+            var valueType = value.GetType();
+            if (type.IsAssignableFrom(valueType))
+                return value;
+            if (typeof(IConvertible).IsAssignableFrom(type))
+                return Convert.ChangeType(value, type);
+            throw new InvalidCastException("Could not convert to " + type.Name);
         }
 
         private object DeserializeArray(Type type)
@@ -536,7 +541,7 @@ namespace HyperTomlProcessor
         private object DeserializeCollection(Type type)
         {
             dynamic collection;
-            var elmType = GetCollectionType(type);
+            var elmType = ReflectionUtils.GetCollectionType(type);
             if (type.IsAssignableFrom(typeof(List<object>)))
                 collection = new List<object>();
             else if (type.IsAssignableFrom(typeof(ArrayList)))
@@ -548,7 +553,7 @@ namespace HyperTomlProcessor
 
                 var listType = typeof(List<>).MakeGenericType(elmType);
                 if (!type.IsAssignableFrom(listType))
-                    throw new InvalidCastException("Could not create List<" + elmType.Name + ">.");
+                    throw new InvalidCastException("Could not make List<" + elmType.Name + ">.");
                 collection = Activator.CreateInstance(listType);
             }
             else
@@ -572,23 +577,34 @@ namespace HyperTomlProcessor
                 if (dict.ContainsKey(key))
                 {
                     var p = dict[key];
-                    p.SetValue(result, DeserializeValue(xe, p.PropertyType), null);
+                    var isDynamic = p.GetSetMethod().GetParameters()[0]
+                        .GetCustomAttributes(typeof(DynamicAttribute), false).Length != 0;
+                    p.SetValue(result, DeserializeValue(xe, isDynamic ? typeof(DynamicToml) : p.PropertyType), null);
                 }
             }
             return result;
         }
 
-        private Dictionary<string, object> ToDictionary()
+        private object DeserializeDictionary(Type type, Type keyType, Type valueType)
         {
-            var dic = new Dictionary<string, object>();
-            foreach (var xe in this.element.Elements())
+            dynamic dic; // なんで ID<TKey, TValue> が ID を継承してないんじゃ！！
+            if (type.IsAssignableFrom(typeof(Dictionary<string, object>)))
+                dic = new Dictionary<string, object>();
+            else if (type.IsAssignableFrom(typeof(Hashtable)))
+                dic = new Hashtable();
+            else if (type.IsInterface)
             {
-                var value = ToValue(xe);
-                var dt = value as DynamicToml;
-                if (dt != null)
-                    value = dt.Deserialize(dt.isArray ? typeof(object[]) : typeof(Dictionary<string, object>));
-                dic.Add(GetKey(xe), value);
+                var dicType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
+                if (!type.IsAssignableFrom(dicType))
+                    throw new InvalidCastException(string.Format("Could not make Dictionary<{0}, {1}>.", keyType.Name, valueType.Name));
+                dic = Activator.CreateInstance(dicType);
             }
+            else
+                dic = Activator.CreateInstance(type);
+
+            foreach (var xe in this.element.Elements())
+                dic.Add(GetKey(xe), (dynamic)DeserializeValue(xe, valueType));
+
             return dic;
         }
 
