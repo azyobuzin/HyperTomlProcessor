@@ -532,9 +532,11 @@ namespace HyperTomlProcessor
         {
             var elm = this.element.Elements().ToArray();
             var elmType = type.GetElementType();
-            var result = (object[])Array.CreateInstance(elmType, elm.Length);
+            var array = new object[elm.Length];
             for (var i = 0; i < elm.Length; i++)
-                result[i] = DeserializeValue(elm[i], elmType);
+                array[i] = DeserializeValue(elm[i], elmType);
+            var result = Array.CreateInstance(elmType, elm.Length);
+            Array.Copy(array, result, elm.Length); // faster than dynamic
             return result;
         }
 

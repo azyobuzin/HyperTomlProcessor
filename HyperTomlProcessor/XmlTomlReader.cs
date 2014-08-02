@@ -402,11 +402,19 @@ namespace HyperTomlProcessor
                 {
                     do
                     {
-                        this.isNextEOF = !this.reader.Read();
-                        if (this.isNextEOF)
+                        var eof = !this.reader.Read();
+                        if (eof)
                         {
-                            this.node = root;
-                            this.isEnd = true;
+                            if (this.position.Count > 0)
+                            {
+                                this.EndThisTable();
+                            }
+                            else
+                            {
+                                this.node = root;
+                                this.isEnd = true;
+                                this.isNextEOF = true;
+                            }
                             return true;
                         }
                     } while (this.reader.NodeType == TomlNodeType.EndLine);
