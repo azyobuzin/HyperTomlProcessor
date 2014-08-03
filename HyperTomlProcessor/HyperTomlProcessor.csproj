@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DynamicToml.cs" />
+    <Compile Include="TomlConvert.cs" />
+    <Compile Include="XUtils.cs" />
     <Compile Include="ReflectionUtils.cs" />
     <Compile Include="TomlException.cs" />
     <Compile Include="TomlReader.cs" />

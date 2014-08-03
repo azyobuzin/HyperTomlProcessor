@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Xml.Linq;
 
 namespace HyperTomlProcessor
@@ -62,6 +63,7 @@ namespace HyperTomlProcessor
                 case TypeCode.UInt64:
                     return TomlNodeType.Integer;
                 default:
+                    //TODO: Dictionary に対応
                     var dt = obj as DynamicToml;
                     return dt != null
                         ? (dt.isArray
@@ -77,8 +79,8 @@ namespace HyperTomlProcessor
         {
             return new[]
             {
-                new XAttribute("type", XmlTomlReader.GetJsonTypeString(nodeType)),
-                new XAttribute("toml", XmlTomlReader.tomlType[nodeType])
+                new XAttribute("type", XUtils.GetJsonTypeString(nodeType)),
+                new XAttribute("toml", XUtils.TomlTypeTable[nodeType])
             };
         }
 
@@ -189,6 +191,18 @@ namespace HyperTomlProcessor
             return Parse(new StringReader(toml));
         }
 
+        public static void Serialize(object obj, TextWriter writer)
+        {
+            var type = GetTomlType(obj);
+            var elm = new XElement("root", CreateTypeAttr(type), ToXml(type, obj));
+            XUtils.WriteTo(elm, writer);
+        }
+
+        public static string Serialize(object obj)
+        {
+            return XUtils.GetStreamString(w => Serialize(obj, w));
+        }
+
         private DynamicToml(XElement elm)
         {
             this.element = elm;
@@ -224,16 +238,10 @@ namespace HyperTomlProcessor
             }
         }
 
-        private string GetKey(XElement xe)
-        {
-            return xe.Name.Namespace == XmlTomlReader.namespaceA
-                ? xe.Attribute("item").Value : xe.Name.LocalName;
-        }
-
         private XElement Get(string key)
         {
             return this.element.Elements()
-                .FirstOrDefault(xe => GetKey(xe) == key);
+                .FirstOrDefault(xe => XUtils.GetKey(xe) == key);
         }
 
         private XElement Get(int index)
@@ -313,7 +321,7 @@ namespace HyperTomlProcessor
         {
             return this.isArray
                 ? Enumerable.Empty<string>()
-                : this.element.Elements().Select(GetKey);
+                : this.element.Elements().Select(XUtils.GetKey);
         }
 
         public override bool TryInvoke(InvokeBinder binder, object[] args, out object result)
@@ -396,11 +404,11 @@ namespace HyperTomlProcessor
             var node = ToXml(type, value);
             if (xe == null)
             {
-                var elm = XmlTomlReader.IsValidName(key)
+                var elm = XUtils.IsValidName(key)
                     ? new XStreamingElement(key, attr, node)
                     : new XStreamingElement(
-                        XmlTomlReader.namespaceA + "item",
-                        XmlTomlReader.prefixA,
+                        XUtils.NamespaceA + "item",
+                        XUtils.PrefixA,
                         new XAttribute("item", key),
                         attr,
                         node
@@ -470,7 +478,8 @@ namespace HyperTomlProcessor
         {
             return this.isArray
                 ? this.element.Elements().Select(ToValue)
-                : this.element.Elements().Select(xe => (object)new KeyValuePair<string, object>(GetKey(xe), ToValue(xe)));
+                : this.element.Elements().Select(xe =>
+                    (object)new KeyValuePair<string, object>(XUtils.GetKey(xe), ToValue(xe)));
         }
 
         IEnumerator<object> IEnumerable<object>.GetEnumerator()
@@ -519,13 +528,13 @@ namespace HyperTomlProcessor
                     return dt;
                 value = dt.Deserialize(type);
             }
-            
+
             var valueType = value.GetType();
             if (type.IsAssignableFrom(valueType))
                 return value;
             if (typeof(IConvertible).IsAssignableFrom(type))
                 return Convert.ChangeType(value, type);
-            throw new InvalidCastException("Could not convert to " + type.Name);
+            throw new SerializationException("Could not convert to " + type.Name);
         }
 
         private object DeserializeArray(Type type)
@@ -551,11 +560,11 @@ namespace HyperTomlProcessor
             else if (type.IsInterface)
             {
                 if (!typeof(IEnumerable).IsAssignableFrom(type))
-                    throw new InvalidCastException(type.Name + " does not implement IEnumerable.");
+                    throw new SerializationException(type.Name + " does not implement IEnumerable.");
 
                 var listType = typeof(List<>).MakeGenericType(elmType);
                 if (!type.IsAssignableFrom(listType))
-                    throw new InvalidCastException("Could not make List<" + elmType.Name + ">.");
+                    throw new SerializationException("Could not make List<" + elmType.Name + ">.");
                 collection = Activator.CreateInstance(listType);
             }
             else
@@ -575,7 +584,7 @@ namespace HyperTomlProcessor
                 .ToDictionary(p => p.Name);
             foreach (var xe in this.element.Elements())
             {
-                var key = GetKey(xe);
+                var key = XUtils.GetKey(xe);
                 if (dict.ContainsKey(key))
                 {
                     var p = dict[key];
@@ -598,14 +607,14 @@ namespace HyperTomlProcessor
             {
                 var dicType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
                 if (!type.IsAssignableFrom(dicType))
-                    throw new InvalidCastException(string.Format("Could not make Dictionary<{0}, {1}>.", keyType.Name, valueType.Name));
+                    throw new SerializationException(string.Format("Could not make Dictionary<{0}, {1}>.", keyType.Name, valueType.Name));
                 dic = Activator.CreateInstance(dicType);
             }
             else
                 dic = Activator.CreateInstance(type);
 
             foreach (var xe in this.element.Elements())
-                dic.Add(GetKey(xe), (dynamic)DeserializeValue(xe, valueType));
+                dic.Add(XUtils.GetKey(xe), (dynamic)DeserializeValue(xe, valueType));
 
             return dic;
         }
@@ -617,8 +626,25 @@ namespace HyperTomlProcessor
 
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
-            result = this.Deserialize(binder.Type);
-            return true;
+            try
+            {
+                result = this.Deserialize(binder.Type);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidCastException("Could not convert.", ex);
+            }
+        }
+
+        public void WriteTo(TextWriter writer)
+        {
+            XUtils.WriteTo(this.element, writer);
+        }
+
+        public override string ToString()
+        {
+            return XUtils.GetStreamString(this.WriteTo);
         }
     }
 }

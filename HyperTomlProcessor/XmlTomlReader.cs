@@ -38,21 +38,6 @@ namespace HyperTomlProcessor
 
         private XElement root = new XElement("root", new XAttribute("type", "object"), new XAttribute("toml", "table"));
 
-        internal static readonly Dictionary<TomlNodeType, string> tomlType = new Dictionary<TomlNodeType, string>()
-        {
-            {TomlNodeType.BasicString, "basicString"},
-            {TomlNodeType.MultilineBasicString, "multi-lineBasicString"},
-            {TomlNodeType.LiteralString, "literalString"},
-            {TomlNodeType.MultilineLiteralString, "multi-lineLiteralString"},
-            {TomlNodeType.Integer, "integer"},
-            {TomlNodeType.Float, "float"},
-            {TomlNodeType.Boolean, "boolean"},
-            {TomlNodeType.Datetime, "datetime"},
-            {TomlNodeType.StartArray, "array"},
-            {TomlNodeType.StartTable, "table"},
-            {TomlNodeType.StartArrayOfTable, "arrayOfTable"}
-        };
-
         private struct TableName
         {
             public string Name;
@@ -66,48 +51,6 @@ namespace HyperTomlProcessor
         }
         private readonly LinkedList<TableName> position = new LinkedList<TableName>();
         private bool isTableContent;
-
-        private static readonly bool[] ValidFirstName;
-        private static readonly bool[] ValidName;
-        private static void Allow(bool[] a, int start, int end)
-        {
-            for (var i = start; i <= end; i++)
-                a[i] = true;
-        }
-        static XmlTomlReader()
-        {
-            ValidFirstName = new bool[256];
-            Allow(ValidFirstName, 0x41, 0x5A);
-            ValidFirstName[0x5F] = true;
-            Allow(ValidFirstName, 0x61, 0x7A);
-            Allow(ValidFirstName, 0x80, 0xFF);
-
-            ValidName = new bool[256];
-            Allow(ValidName, 0x2D, 0x2E);
-            Allow(ValidName, 0x30, 0x39);
-            Allow(ValidName, 0x41, 0x5A);
-            ValidName[0x5F] = true;
-            Allow(ValidName, 0x61, 0x7A);
-        }
-        internal static bool IsValidName(string name)
-        {
-            var bytes = Encoding.UTF8.GetBytes(name);
-            if (!ValidFirstName[bytes[0]]) return false;
-            foreach (var b in bytes)
-            {
-                if (!ValidName[b]) return false;
-            }
-            return true;
-        }
-
-        internal static readonly XNamespace namespaceA = "item";
-        internal static XAttribute prefixA
-        {
-            get
-            {
-                return new XAttribute(XNamespace.Xmlns + "a", namespaceA);
-            }
-        }
 
         private T DoOnElement<T>(Func<XElement, T> action, T def = default(T))
         {
@@ -290,36 +233,11 @@ namespace HyperTomlProcessor
             }
         }
 
-        internal static string GetJsonTypeString(TomlNodeType nodeType)
-        {
-            switch (nodeType)
-            {
-                case TomlNodeType.BasicString:
-                case TomlNodeType.MultilineBasicString:
-                case TomlNodeType.LiteralString:
-                case TomlNodeType.MultilineLiteralString:
-                case TomlNodeType.Datetime:
-                    return "string";
-                case TomlNodeType.Integer:
-                case TomlNodeType.Float:
-                    return "number";
-                case TomlNodeType.Boolean:
-                    return "boolean";
-                case TomlNodeType.StartArray:
-                case TomlNodeType.StartArrayOfTable:
-                    return "array";
-                case TomlNodeType.StartTable:
-                    return "object";
-                default:
-                    throw new ArgumentException("nodeType is not a value type.");
-            }
-        }
-
         private string GetTypeString()
         {
             try
             {
-                return GetJsonTypeString(this.reader.NodeType);
+                return XUtils.GetJsonTypeString(this.reader.NodeType);
             }
             catch (ArgumentException ex)
             {
@@ -337,13 +255,13 @@ namespace HyperTomlProcessor
 
         private static XElement CreateKeyElement(string key, string type, string tomlType)
         {
-            return IsValidName(key)
+            return XUtils.IsValidName(key)
                 ? new XElement(key,
                     new XAttribute("type", type),
                     new XAttribute("toml", tomlType)
                 )
-                : new XElement(namespaceA + "item",
-                    prefixA,
+                : new XElement(XUtils.NamespaceA + "item",
+                    XUtils.PrefixA,
                     new XAttribute("item", key),
                     new XAttribute("type", type),
                     new XAttribute("toml", tomlType)
@@ -447,7 +365,7 @@ namespace HyperTomlProcessor
                     if (this.isTableContent)
                         xe = (XElement)this.node.Parent;
                     xe.RemoveNodes();
-                    xe.AddFirst(CreateKeyElement(key, this.GetTypeString(), tomlType[this.reader.NodeType]));
+                    xe.AddFirst(CreateKeyElement(key, this.GetTypeString(), XUtils.TomlTypeTable[this.reader.NodeType]));
                     this.node = xe.FirstNode;
                     this.isTableContent = true;
                     break;
@@ -469,7 +387,7 @@ namespace HyperTomlProcessor
                         xe.RemoveNodes();
                         xe.AddFirst(new XElement("item",
                             new XAttribute("type", this.GetTypeString()),
-                            new XAttribute("toml", tomlType[this.reader.NodeType]),
+                            new XAttribute("toml", XUtils.TomlTypeTable[this.reader.NodeType]),
                             new XText(s)
                         ));
                         this.node = xe.FirstNode;
