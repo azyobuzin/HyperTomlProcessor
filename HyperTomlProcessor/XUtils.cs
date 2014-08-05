@@ -68,47 +68,7 @@ namespace HyperTomlProcessor
             }
             return true;
         }
-
-        internal static readonly Dictionary<TomlNodeType, string> TomlTypeTable = new Dictionary<TomlNodeType, string>()
-        {
-            {TomlNodeType.BasicString, "basicString"},
-            {TomlNodeType.MultilineBasicString, "multi-lineBasicString"},
-            {TomlNodeType.LiteralString, "literalString"},
-            {TomlNodeType.MultilineLiteralString, "multi-lineLiteralString"},
-            {TomlNodeType.Integer, "integer"},
-            {TomlNodeType.Float, "float"},
-            {TomlNodeType.Boolean, "boolean"},
-            {TomlNodeType.Datetime, "datetime"},
-            {TomlNodeType.StartArray, "array"},
-            {TomlNodeType.StartTable, "table"},
-            {TomlNodeType.StartArrayOfTable, "arrayOfTable"}
-        };
-
-        internal static string GetJsonTypeString(TomlNodeType nodeType)
-        {
-            switch (nodeType)
-            {
-                case TomlNodeType.BasicString:
-                case TomlNodeType.MultilineBasicString:
-                case TomlNodeType.LiteralString:
-                case TomlNodeType.MultilineLiteralString:
-                case TomlNodeType.Datetime:
-                    return "string";
-                case TomlNodeType.Integer:
-                case TomlNodeType.Float:
-                    return "number";
-                case TomlNodeType.Boolean:
-                    return "boolean";
-                case TomlNodeType.StartArray:
-                case TomlNodeType.StartArrayOfTable:
-                    return "array";
-                case TomlNodeType.StartTable:
-                    return "object";
-                default:
-                    throw new ArgumentException("nodeType is not a value type.");
-            }
-        }
-
+        
         internal static string GetJsonTypeString(TomlItemType type)
         {
             switch (type)
@@ -141,10 +101,10 @@ namespace HyperTomlProcessor
             return type.Value;
         }
 
-        private static string GetTomlAttr(XElement xe)
+        internal static TomlItemType? GetTomlAttr(XElement xe)
         {
             var toml = xe.Attribute("toml");
-            return toml != null ? toml.Value : null;
+            return toml != null ? (TomlItemType?)Enum.Parse(typeof(TomlItemType), toml.Value) : null;
         }
 
         internal static void WriteTo(XElement xe, TextWriter writer)
@@ -215,15 +175,15 @@ namespace HyperTomlProcessor
         {
             switch (GetTomlAttr(xe))
             {
-                case "basicString":
+                case TomlItemType.BasicString:
                     WriteBasicString(xe.Value, writer);
                     break;
-                case "multi-lineBasicString":
+                case TomlItemType.MultilineBasicString:
                     writer.Write("\"\"\"");
                     writer.Write(BasicEscape(xe.Value));
                     writer.Write("\"\"\"");
                     break;
-                case "literalString":
+                case TomlItemType.LiteralString:
                     foreach (var c in xe.Value)
                     {
                         if (c == '\r' || c == '\n')
@@ -235,11 +195,11 @@ namespace HyperTomlProcessor
                     writer.Write(xe.Value);
                     writer.Write('\'');
                     break;
-                case "multi-lineLiteralString":
+                case TomlItemType.MultilineLiteralString:
                     if (xe.Value.Contains("'''"))
                         throw new SerializationException("A multi-line literal string cannot contain \"'''\"");
                     break;
-                case "datetime":
+                case TomlItemType.Datetime:
                     WriteDateTime((DateTimeOffset)xe, writer);
                     break;
                 default: // BasicString or Datetime
@@ -272,10 +232,10 @@ namespace HyperTomlProcessor
         {
             switch (GetTomlAttr(xe))
             {
-                case "integer":
+                case TomlItemType.Integer:
                     WriteInteger((long)xe, writer);
                     break;
-                case "float":
+                case TomlItemType.Float:
                     WriteFloat((double)xe, writer);
                     break;
                 default:

@@ -51,9 +51,6 @@
     <Compile Include="TomlItemType.cs" />
     <Compile Include="XUtils.cs" />
     <Compile Include="ReflectionUtils.cs" />
-    <Compile Include="TomlException.cs" />
-    <Compile Include="TomlReader.cs" />
-    <Compile Include="XmlTomlReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

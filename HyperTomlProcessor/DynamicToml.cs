@@ -15,27 +15,27 @@ namespace HyperTomlProcessor
     {
         private static object ToValue(XElement xe)
         {
-            switch (xe.Attribute("toml").Value)
+            switch (XUtils.GetTomlAttr(xe))
             {
-                case "basicString":
-                case "multi-lineBasicString":
-                case "literalString":
-                case "multi-lineLiteralString":
+                case TomlItemType.BasicString:
+                case TomlItemType.MultilineBasicString:
+                case TomlItemType.LiteralString:
+                case TomlItemType.MultilineLiteralString:
                     return xe.Value;
-                case "integer":
+                case TomlItemType.Integer:
                     return (long)xe;
-                case "float":
+                case TomlItemType.Float:
                     return (double)xe;
-                case "boolean":
+                case TomlItemType.Boolean:
                     return (bool)xe;
-                case "datetime":
+                case TomlItemType.Datetime:
                     return (DateTimeOffset)xe;
                 default:
                     return new DynamicToml(xe);
             }
         }
 
-        private static TomlNodeType GetTomlType(object obj)
+        private static TomlItemType GetTomlType(object obj)
         {
 
             if (obj == null) throw new ArgumentNullException("obj");
@@ -43,16 +43,16 @@ namespace HyperTomlProcessor
             switch (Type.GetTypeCode(obj.GetType()))
             {
                 case TypeCode.Boolean:
-                    return TomlNodeType.Boolean;
+                    return TomlItemType.Boolean;
                 case TypeCode.String:
                 case TypeCode.Char:
-                    return TomlNodeType.BasicString;
+                    return TomlItemType.BasicString;
                 case TypeCode.DateTime:
-                    return TomlNodeType.Datetime;
+                    return TomlItemType.Datetime;
                 case TypeCode.Decimal:
                 case TypeCode.Double:
                 case TypeCode.Single:
-                    return TomlNodeType.Float;
+                    return TomlItemType.Float;
                 case TypeCode.Byte:
                 case TypeCode.Int16:
                 case TypeCode.Int32:
@@ -61,44 +61,43 @@ namespace HyperTomlProcessor
                 case TypeCode.UInt16:
                 case TypeCode.UInt32:
                 case TypeCode.UInt64:
-                    return TomlNodeType.Integer;
+                    return TomlItemType.Integer;
                 default:
                     //TODO: Dictionary に対応
                     var dt = obj as DynamicToml;
                     return dt != null
                         ? (dt.isArray
-                            ? TomlNodeType.StartArray // arrayOfTable も array にしちゃえ
-                            : TomlNodeType.StartTable)
-                        : obj is DateTimeOffset ? TomlNodeType.Datetime
-                        : obj is IEnumerable ? TomlNodeType.StartArray
-                        : TomlNodeType.StartTable;
+                            ? TomlItemType.Array
+                            : TomlItemType.Table)
+                        : obj is DateTimeOffset ? TomlItemType.Datetime
+                        : obj is IEnumerable ? TomlItemType.Array
+                        : TomlItemType.Table;
             }
         }
 
-        private static XAttribute[] CreateTypeAttr(TomlNodeType nodeType)
+        private static XAttribute[] CreateTypeAttr(TomlItemType nodeType)
         {
             return new[]
             {
                 new XAttribute("type", XUtils.GetJsonTypeString(nodeType)),
-                new XAttribute("toml", XUtils.TomlTypeTable[nodeType])
+                new XAttribute("toml", nodeType.ToString())
             };
         }
 
-        private static object ToXml(TomlNodeType nodeType, object obj)
+        private static object ToXml(TomlItemType nodeType, object obj)
         {
             var dt = obj as DynamicToml;
             if (dt != null) return dt.element.Elements();
 
             switch (nodeType)
             {
-                case TomlNodeType.StartArray:
-                case TomlNodeType.StartArrayOfTable:
+                case TomlItemType.Array:
                     return ((IEnumerable)obj).Cast<object>().Select(o =>
                     {
                         var type = GetTomlType(o);
-                        return new XStreamingElement("item", CreateTypeAttr(type), ToXml(type, o));
+                        return new XElement("item", CreateTypeAttr(type), ToXml(type, o));
                     });
-                case TomlNodeType.StartTable:
+                case TomlItemType.Table:
                     return obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                         .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
                         .Select(p => new { Name = p.Name, Value = p.GetValue(obj, null) })
@@ -106,51 +105,10 @@ namespace HyperTomlProcessor
                         .Select(x =>
                         {
                             var type = GetTomlType(x.Value);
-                            return new XStreamingElement(x.Name, CreateTypeAttr(type), ToXml(type, x.Value));
+                            return new XElement(x.Name, CreateTypeAttr(type), ToXml(type, x.Value));
                         });
                 default:
                     return new XText(obj.ToString());
-            }
-        }
-
-        private static TomlNodeType NormalizeType(TomlNodeType nodeType)
-        {
-            switch (nodeType)
-            {
-                case TomlNodeType.MultilineBasicString:
-                case TomlNodeType.LiteralString:
-                case TomlNodeType.MultilineLiteralString:
-                    return TomlNodeType.BasicString;
-                case TomlNodeType.StartArrayOfTable:
-                    return TomlNodeType.StartArray;
-            }
-            return nodeType;
-        }
-
-        private static TomlNodeType GetNormalizedType(string tomlAttr)
-        {
-            switch (tomlAttr)
-            {
-                case "basicString":
-                case "multi-lineBasicString":
-                case "literalString":
-                case "multi-lineLiteralString":
-                    return TomlNodeType.BasicString;
-                case "integer":
-                    return TomlNodeType.Integer;
-                case "float":
-                    return TomlNodeType.Float;
-                case "boolean":
-                    return TomlNodeType.Boolean;
-                case "datetime":
-                    return TomlNodeType.Datetime;
-                case "array":
-                case "arrayOfTable":
-                    return TomlNodeType.StartArray;
-                case "table":
-                    return TomlNodeType.StartTable;
-                default:
-                    throw new ArgumentException("tomlAttr is invalid.");
             }
         }
 
@@ -164,31 +122,14 @@ namespace HyperTomlProcessor
             return new DynamicToml(new XElement("root", new XAttribute("type", "array"), new XAttribute("toml", "array")));
         }
 
-        public static dynamic Parse(XmlTomlReader reader)
-        {
-            try
-            {
-                return new DynamicToml(XElement.Load(reader));
-            }
-            finally
-            {
-                reader.Close();
-            }
-        }
-
         public static dynamic Parse(TextReader reader)
         {
-            return Parse(new XmlTomlReader(reader));
+            return new DynamicToml(TomlConvert.ToXElement(reader));
         }
 
-        public static dynamic Parse(TomlReader reader)
+        public static dynamic Parse(IEnumerable<char> toml)
         {
-            return Parse(new XmlTomlReader(reader));
-        }
-
-        public static dynamic Parse(string toml)
-        {
-            return Parse(new StringReader(toml));
+            return new DynamicToml(TomlConvert.ToXElement(toml));
         }
 
         public static void Serialize(object obj, TextWriter writer)
@@ -206,13 +147,13 @@ namespace HyperTomlProcessor
         private DynamicToml(XElement elm)
         {
             this.element = elm;
-            this.isArray = elm.Attribute("toml").Value != "table";
+            this.isArray = XUtils.GetTomlAttr(elm) == TomlItemType.Array;
             if (this.isArray && elm.HasElements)
             {
-                this.arrayType = elm.Elements().Aggregate(TomlNodeType.None, (a, xe) =>
+                this.arrayType = elm.Elements().Aggregate(TomlItemType.None, (a, xe) =>
                 {
-                    var type = GetNormalizedType(xe.Attribute("toml").Value);
-                    if (a == TomlNodeType.None || a == type) return type;
+                    var type = XUtils.GetTomlAttr(xe).Value.Normalize();
+                    if (a == TomlItemType.None || a == type) return type;
                     throw new InvalidDataException("The values' type are not uniform.");
                 });
             }
@@ -220,7 +161,7 @@ namespace HyperTomlProcessor
 
         private readonly XElement element;
         private readonly bool isArray;
-        private TomlNodeType arrayType = TomlNodeType.None;
+        private TomlItemType arrayType = TomlItemType.None;
 
         public bool IsObject
         {
@@ -289,7 +230,7 @@ namespace HyperTomlProcessor
             this.EnsureArrayType(type);
             var attr = CreateTypeAttr(type);
             var node = ToXml(type, obj);
-            this.element.Add(new XStreamingElement("item", attr, node));
+            this.element.Add(new XElement("item", attr, node));
         }
 
         public void Add(string key, object obj)
@@ -303,15 +244,15 @@ namespace HyperTomlProcessor
         private void EnsureArrayType()
         {
             if (this.isArray && !this.element.HasElements)
-                this.arrayType = TomlNodeType.None;
+                this.arrayType = TomlItemType.None;
         }
 
-        private void EnsureArrayType(TomlNodeType nodeType)
+        private void EnsureArrayType(TomlItemType nodeType)
         {
             if (!this.isArray) return;
 
-            var n = NormalizeType(nodeType);
-            if (this.arrayType == TomlNodeType.None)
+            var n = nodeType.Normalize();
+            if (this.arrayType == TomlItemType.None)
                 this.arrayType = n;
             else if (this.arrayType != n)
                 throw new ArgumentException("The value is unmatched for the type of this array.");
@@ -404,16 +345,7 @@ namespace HyperTomlProcessor
             var node = ToXml(type, value);
             if (xe == null)
             {
-                var elm = XUtils.IsValidName(key)
-                    ? new XStreamingElement(key, attr, node)
-                    : new XStreamingElement(
-                        XUtils.NamespaceA + "item",
-                        XUtils.PrefixA,
-                        new XAttribute("item", key),
-                        attr,
-                        node
-                    );
-                this.element.Add(elm);
+                this.element.Add(XUtils.CreateElement(key, attr, node));
             }
             else
             {
@@ -457,7 +389,7 @@ namespace HyperTomlProcessor
                 var node = ToXml(type, value);
                 if (elements.Length == i)
                 {
-                    this.element.Add(new XStreamingElement("item", attr, node));
+                    this.element.Add(new XElement("item", attr, node));
                 }
                 else
                 {
