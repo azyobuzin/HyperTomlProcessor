@@ -124,12 +124,17 @@ namespace HyperTomlProcessor
 
         public static dynamic Parse(TextReader reader)
         {
-            return new DynamicToml(TomlConvert.ToXElement(reader));
+            return new DynamicToml(TomlConvert.DeserializeXElement(reader));
+        }
+
+        public static dynamic Parse(Stream stream)
+        {
+            return Parse(new StreamReader(stream));
         }
 
         public static dynamic Parse(IEnumerable<char> toml)
         {
-            return new DynamicToml(TomlConvert.ToXElement(toml));
+            return new DynamicToml(TomlConvert.DeserializeXElement(toml));
         }
 
         public static void Serialize(object obj, TextWriter writer)
@@ -572,6 +577,11 @@ namespace HyperTomlProcessor
         public void WriteTo(TextWriter writer)
         {
             XUtils.WriteTo(this.element, writer);
+        }
+
+        public void WriteTo(Stream stream)
+        {
+            WriteTo(new StreamWriter(stream));
         }
 
         public override string ToString()

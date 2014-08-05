@@ -380,7 +380,7 @@ namespace HyperTomlProcessor
             throw new FormatException(string.Join(" ", message, stream.Position.ToString()), innerException);
         }
 
-        private static XElement ToXElement(IStream<char> stream)
+        internal static XElement DeserializeXElement(IStream<char> stream)
         {
             var reply = TomlParser(stream);
             ParseResult result;
@@ -438,14 +438,19 @@ namespace HyperTomlProcessor
             return root.ToXElement("root");
         }
 
-        public static XElement ToXElement(IEnumerable<char> toml)
+        public static XElement DeserializeXElement(IEnumerable<char> toml)
         {
-            return ToXElement(toml.AsStream());
+            return DeserializeXElement(toml.AsStream());
         }
 
-        public static XElement ToXElement(TextReader reader)
+        public static XElement DeserializeXElement(TextReader reader)
         {
-            return ToXElement(reader.AsStream());
+            return DeserializeXElement(reader.AsStream());
+        }
+
+        public static XElement DeserializeXElement(Stream stream)
+        {
+            return DeserializeXElement(new StreamReader(stream));
         }
     }
 }
