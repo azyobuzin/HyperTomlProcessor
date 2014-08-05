@@ -5,7 +5,7 @@ using System.Text;
 
 namespace HyperTomlProcessor
 {
-    public static class TomlConvert
+    public static partial class TomlConvert
     {
         //Serialize DataContractJsonSerializer によるシリアライズ
         //Deserialize

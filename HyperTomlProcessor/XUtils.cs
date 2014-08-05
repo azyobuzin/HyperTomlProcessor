@@ -24,6 +24,12 @@ namespace HyperTomlProcessor
             }
         }
 
+        internal static XElement CreateElement(string name, params object[] content)
+        {
+            return IsValidName(name) ? new XElement(name, content)
+                : new XElement(NamespaceA + "item", PrefixA, new XAttribute("item", name), content);
+        }
+
         internal static string GetKey(XElement xe)
         {
             return xe.Name.Namespace == NamespaceA
@@ -100,6 +106,30 @@ namespace HyperTomlProcessor
                     return "object";
                 default:
                     throw new ArgumentException("nodeType is not a value type.");
+            }
+        }
+
+        internal static string GetJsonTypeString(TomlItemType type)
+        {
+            switch (type)
+            {
+                case TomlItemType.BasicString:
+                case TomlItemType.MultilineBasicString:
+                case TomlItemType.LiteralString:
+                case TomlItemType.MultilineLiteralString:
+                case TomlItemType.Datetime:
+                    return "string";
+                case TomlItemType.Integer:
+                case TomlItemType.Float:
+                    return "number";
+                case TomlItemType.Boolean:
+                    return "boolean";
+                case TomlItemType.Array:
+                    return "array";
+                case TomlItemType.Table:
+                    return "object";
+                default:
+                    return "null";
             }
         }
 
