@@ -114,12 +114,12 @@ namespace HyperTomlProcessor
 
         public static dynamic CreateTable()
         {
-            return new DynamicToml(new XElement("root", new XAttribute("type", "object"), new XAttribute("toml", "table")));
+            return new DynamicToml(new XElement("root", new XAttribute("type", "object"), new XAttribute("toml", "Table")));
         }
 
         public static dynamic CreateArray()
         {
-            return new DynamicToml(new XElement("root", new XAttribute("type", "array"), new XAttribute("toml", "array")));
+            return new DynamicToml(new XElement("root", new XAttribute("type", "array"), new XAttribute("toml", "Array")));
         }
 
         public static dynamic Parse(TextReader reader)
@@ -587,6 +587,17 @@ namespace HyperTomlProcessor
         public override string ToString()
         {
             return XUtils.GetStreamString(this.WriteTo);
+        }
+
+        public override bool Equals(object obj)
+        {
+            var dt = obj as DynamicToml;
+            return dt != null && this.element == dt.element;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.element.GetHashCode();
         }
     }
 }

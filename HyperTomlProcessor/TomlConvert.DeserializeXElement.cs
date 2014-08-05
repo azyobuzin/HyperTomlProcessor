@@ -62,8 +62,8 @@ namespace HyperTomlProcessor
             public ArrayItem(TomlValue value, IEnumerable<Comment> before, IEnumerable<Comment> after)
             {
                 this.Value = value;
-                this.Before = before;
-                this.After = after;
+                this.Before = before ?? Enumerable.Empty<Comment>();
+                this.After = after ?? Enumerable.Empty<Comment>();
             }
         }
 
@@ -240,12 +240,16 @@ namespace HyperTomlProcessor
             var comments = comment.Between(spacesOrNewlines, spacesOrNewlines).Many();
             var comma = ','.Satisfy().Between(spacesOrNewlines, spacesOrNewlines);
             Func<Parser<char, TomlValue>, Parser<char, TomlValue>> createArrayParser = p =>
-                (from b in comments
-                 from v in p.Between(spacesOrNewlines, spacesOrNewlines)
-                 from a in comments
-                 select new ArrayItem(v, b, a)
-                ).SepBy(comma).Between('['.Satisfy(), ']'.Satisfy())
-                 .Select(x => new TomlValue(TomlItemType.Array, x));
+                '['.Satisfy().Right(
+                    from i in
+                        (from b in comments
+                         from v in p.Between(spacesOrNewlines, spacesOrNewlines)
+                         from a in comments
+                         select new ArrayItem(v, b, a)
+                        ).SepEndBy(comma)
+                    from c in comments.Left(']'.Satisfy())
+                    select new TomlValue(TomlItemType.Array, i.Concat(new[] { new ArrayItem(null, null, c) }))
+                );
             arrayRef = Combinator.Choice(
                 createArrayParser(Combinator.Choice(
                     multilineBasicString, basicString, multilineLiteralString, literalString)), // 順番大事
@@ -285,7 +289,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private static IEnumerable<XNode> ConvertContent(TomlValue value)
+        private static IEnumerable<object> ConvertContent(TomlValue value)
         {
             if (value.Type == TomlItemType.Array)
             {
@@ -294,11 +298,12 @@ namespace HyperTomlProcessor
                     foreach (var c in a.Before)
                         yield return new XComment(c.Text);
 
-                    yield return new XElement("item",
-                        new XAttribute("type", XUtils.GetJsonTypeString(a.Value.Type)),
-                        new XAttribute("toml", a.Value.Type.ToString()),
-                        ConvertContent(a.Value)
-                    );
+                    if (a.Value != null)
+                        yield return new XElement("item",
+                            new XAttribute("type", XUtils.GetJsonTypeString(a.Value.Type)),
+                            new XAttribute("toml", a.Value.Type.ToString()),
+                            ConvertContent(a.Value)
+                        );
 
                     foreach (var c in a.After)
                         yield return new XComment(c.Text);
@@ -306,13 +311,13 @@ namespace HyperTomlProcessor
             }
             else
             {
-                yield return new XText(value.Value.ToString());
+                yield return value.Value;
             }
         }
 
         private static IEnumerable<XNode> ToXNodes(IEnumerable<TableNode> nodes)
         {
-            foreach(var n in nodes.Where(n => n != null))
+            foreach (var n in nodes.Where(n => n != null))
             {
                 var kv = n as KeyValue;
                 if (kv != null)
