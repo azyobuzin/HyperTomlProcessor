@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -456,7 +457,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private object DeserializeValue(XElement xe, Type type)
+        private static object DeserializeValue(XElement xe, Type type)
         {
             var value = ToValue(xe);
             var dt = value as DynamicToml;
@@ -487,9 +488,57 @@ namespace HyperTomlProcessor
             return result;
         }
 
+        private static Dictionary<Tuple<Type, Type>, Action<object, IEnumerator<XElement>>> addToCollectionActionCache;
+        private static Action<object, IEnumerator<XElement>> GetAddToCollectionAction(Type collectionType, Type elmType)
+        {
+            var tuple = Tuple.Create(collectionType, elmType);
+            Action<object, IEnumerator<XElement>> action;
+            if (addToCollectionActionCache == null)
+                addToCollectionActionCache = new Dictionary<Tuple<Type, Type>, Action<object, IEnumerator<XElement>>>();
+            else if (addToCollectionActionCache.TryGetValue(tuple, out action))
+                return action;
+
+            var objPrm = Expression.Parameter(typeof(object));
+            var enumeratorType = typeof(IEnumerator<XElement>);
+            var elmsPrm = Expression.Parameter(enumeratorType);
+            var collectionVar = Expression.Variable(collectionType);
+            var breakLabel = Expression.Label();
+
+            var convExpr = Expression.Assign(collectionVar, Expression.TypeAs(objPrm, collectionType));
+            var loopCondExpr = Expression.IfThen(
+                Expression.Not(
+                    Expression.Call(elmsPrm, typeof(IEnumerator).GetMethod("MoveNext"))
+                ),
+                Expression.Break(breakLabel)
+            );
+            var callDeserializeValueExpr = Expression.Convert(
+                Expression.Call(
+                    typeof(DynamicToml).GetMethod("DeserializeValue", BindingFlags.NonPublic | BindingFlags.Static),
+                    Expression.Property(elmsPrm, enumeratorType.GetProperty("Current")),
+                    Expression.Constant(elmType)
+                ),
+                elmType
+            );
+            var addExpr = Expression.Call(
+                collectionVar,
+                collectionType.GetMethod("Add", new[] { elmType }),
+                callDeserializeValueExpr
+            );
+            var body = Expression.Block(
+                new[] { collectionVar },
+                convExpr,
+                Expression.Loop(Expression.Block(loopCondExpr, addExpr), breakLabel)
+            );
+
+            action = Expression.Lambda<Action<object, IEnumerator<XElement>>>(body, new[] { objPrm, elmsPrm }).Compile();
+            addToCollectionActionCache[tuple] = action;
+
+            return action;
+        }
+
         private object DeserializeCollection(Type type)
         {
-            dynamic collection;
+            object collection;
             var elmType = ReflectionUtils.GetCollectionType(type);
             if (type.IsAssignableFrom(typeof(List<object>)))
                 collection = new List<object>();
@@ -508,8 +557,8 @@ namespace HyperTomlProcessor
             else
                 collection = Activator.CreateInstance(type);
 
-            foreach (var xe in this.element.Elements())
-                collection.Add((dynamic)DeserializeValue(xe, elmType));
+            using (var enumerator = this.element.Elements().GetEnumerator())
+                GetAddToCollectionAction(collection.GetType(), elmType)(collection, enumerator);
 
             return collection;
         }
@@ -523,9 +572,9 @@ namespace HyperTomlProcessor
             foreach (var xe in this.element.Elements())
             {
                 var key = XUtils.GetKey(xe);
-                if (dict.ContainsKey(key))
+                PropertyInfo p;
+                if (dict.TryGetValue(key, out p))
                 {
-                    var p = dict[key];
                     var isDynamic = p.GetSetMethod().GetParameters()[0]
                         .GetCustomAttributes(typeof(DynamicAttribute), false).Length != 0;
                     p.SetValue(result, DeserializeValue(xe, isDynamic ? typeof(DynamicToml) : p.PropertyType), null);
