@@ -108,7 +108,7 @@ namespace HyperTomlProcessor
                             return new XElement(x.Name, CreateTypeAttr(type), ToXml(type, x.Value));
                         });
                 default:
-                    return new XText(obj.ToString());
+                    return obj;
             }
         }
 
@@ -243,7 +243,7 @@ namespace HyperTomlProcessor
             if (this.isArray)
                 throw new InvalidOperationException("This is not a table.");
 
-            this.TrySetKeyValue(key, obj);
+            this.TrySetKeyValue(key, obj, true);
         }
 
         private void EnsureArrayType()
@@ -332,9 +332,10 @@ namespace HyperTomlProcessor
             return true;
         }
 
-        private bool TrySetKeyValue(string key, object value)
+        private bool TrySetKeyValue(string key, object value, bool add)
         {
             var xe = this.Get(key);
+            if (xe != null && add) throw new ArgumentException("An element with the same key already exists.");
             if (value == null)
             {
                 if (xe != null)
@@ -364,7 +365,7 @@ namespace HyperTomlProcessor
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
             if (this.isArray) return false;
-            return this.TrySetKeyValue(binder.Name, value);
+            return this.TrySetKeyValue(binder.Name, value, false);
         }
 
         public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
@@ -406,7 +407,7 @@ namespace HyperTomlProcessor
                 return true;
             }
             if (!this.isArray && index is string)
-                return this.TrySetKeyValue((string)index, value);
+                return this.TrySetKeyValue((string)index, value, false);
 
             return false;
         }

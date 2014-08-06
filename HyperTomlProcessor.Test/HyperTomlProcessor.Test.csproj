@@ -63,6 +63,8 @@
     <Compile Include="Examples.cs" />
     <Compile Include="DeserializeXElementTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestObject.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HyperTomlProcessor\HyperTomlProcessor.csproj">
