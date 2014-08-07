@@ -38,7 +38,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Parseq">
+    <Reference Include="Parseq, Version=2.1.1.1, Culture=neutral, PublicKeyToken=434716041f21e3ab, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Parseq.2.1.1.1\lib\portable-net45+win8\Parseq.dll</HintPath>
     </Reference>
     <Reference Include="System" />

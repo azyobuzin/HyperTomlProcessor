@@ -25,7 +25,6 @@ namespace HyperTomlProcessor
         }
 
         // 引数の順番は DataContractJsonSerializer.WriteObject より
-        // TODO: .NET4.5 では DataContractJsonSerializerSettings
         public static void SerializeObject(TextWriter writer, object obj, Func<DataContractJsonSerializer> factory = null)
         {
             var xd = new XDocument();
@@ -46,6 +45,23 @@ namespace HyperTomlProcessor
         {
             return XUtils.GetStreamString(w => SerializeObject(w, obj, factory));
         }
+
+#if NET45
+        public static void SerializeObject(TextWriter writer, object obj, DataContractJsonSerializerSettings settings)
+        {
+            SerializeObject(writer, obj, () => new DataContractJsonSerializer(obj.GetType(), settings));
+        }
+
+        public static void SerializeObject(Stream stream, object obj, DataContractJsonSerializerSettings settings)
+        {
+            SerializeObject(stream, obj, () => new DataContractJsonSerializer(obj.GetType(), settings));
+        }
+
+        public static string SerializeObject(object obj, DataContractJsonSerializerSettings settings)
+        {
+            return SerializeObject(obj, () => new DataContractJsonSerializer(obj.GetType(), settings));
+        }
+#endif
 
         public static T DeserializeObject<T>(XElement toml, Func<DataContractJsonSerializer> factory = null)
         {
