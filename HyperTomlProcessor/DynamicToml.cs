@@ -488,14 +488,13 @@ namespace HyperTomlProcessor
             return result;
         }
 
-        private static Dictionary<Tuple<Type, Type>, Action<object, IEnumerator<XElement>>> addToCollectionActionCache;
+        private static Dictionary<Type, Action<object, IEnumerator<XElement>>> addToCollectionActionCache;
         private static Action<object, IEnumerator<XElement>> GetAddToCollectionAction(Type collectionType, Type elmType)
         {
-            var tuple = Tuple.Create(collectionType, elmType);
             Action<object, IEnumerator<XElement>> action;
             if (addToCollectionActionCache == null)
-                addToCollectionActionCache = new Dictionary<Tuple<Type, Type>, Action<object, IEnumerator<XElement>>>();
-            else if (addToCollectionActionCache.TryGetValue(tuple, out action))
+                addToCollectionActionCache = new Dictionary<Type, Action<object, IEnumerator<XElement>>>();
+            else if (addToCollectionActionCache.TryGetValue(collectionType, out action))
                 return action;
 
             var objPrm = Expression.Parameter(typeof(object));
@@ -531,7 +530,7 @@ namespace HyperTomlProcessor
             );
 
             action = Expression.Lambda<Action<object, IEnumerator<XElement>>>(body, new[] { objPrm, elmsPrm }).Compile();
-            addToCollectionActionCache[tuple] = action;
+            addToCollectionActionCache[collectionType] = action;
 
             return action;
         }

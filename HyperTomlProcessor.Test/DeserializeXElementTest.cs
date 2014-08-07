@@ -33,5 +33,14 @@ namespace HyperTomlProcessor.Test
         {
             TomlConvert.DeserializeXElement(Examples.Error3);
         }
+
+        [TestMethod]
+        public void StartsWith()
+        {
+            TomlConvert.DeserializeXElement("#comment\n[TestTable]");
+            TomlConvert.DeserializeXElement("Test = 1\n[TestTable]");
+            TomlConvert.DeserializeXElement("[[Test]]\n[[Test]]\n[TestTable]");
+            TomlConvert.DeserializeXElement("[TestTable]\nTest = 1");
+        }
     }
 }
