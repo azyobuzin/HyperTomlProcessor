@@ -9,6 +9,9 @@ using System.Xml.Linq;
 
 namespace HyperTomlProcessor
 {
+    /// <summary>
+    /// Represents a TOML table or array.
+    /// </summary>
     public class DynamicToml : DynamicObject, IEnumerable<object>
     {
         private static object ToValue(XElement xe)
@@ -124,26 +127,49 @@ namespace HyperTomlProcessor
             }
         }
 
+        /// <summary>
+        /// Make a <see cref="DynamicToml"/> with the empty table.
+        /// </summary>
+        /// <returns>A <see cref="DynamicToml"/> with the empty table.</returns>
         public static dynamic CreateTable()
         {
             return new DynamicToml(new XElement("root", new XAttribute("type", "object"), new XAttribute("toml", "Table")));
         }
 
+        /// <summary>
+        /// Make a <see cref="DynamicToml"/> with the empty array.
+        /// </summary>
+        /// <returns>A <see cref="DynamicToml"/> with the empty array.</returns>
         public static dynamic CreateArray()
         {
             return new DynamicToml(new XElement("root", new XAttribute("type", "array"), new XAttribute("toml", "Array")));
         }
 
+        /// <summary>
+        /// Loads a <see cref="DynamicToml"/> from a <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="reader">A <see cref="TextReader" /> that will be read for the TOML content.</param>
+        /// <returns>A <see cref="DynamicToml"/> that contains the TOML that was read from the specified <see cref="TextReader"/>.</returns>
         public static dynamic Parse(TextReader reader)
         {
             return new DynamicToml(TomlConvert.DeserializeXElement(reader));
         }
 
+        /// <summary>
+        /// Creates a new <see cref="DynamicToml"/> instance by using the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream that contains the TOML data.</param>
+        /// <returns>An <see cref="DynamicToml"/> object used to read the data that is contained in the stream.</returns>
         public static dynamic Parse(Stream stream)
         {
             return Parse(new StreamReader(stream));
         }
 
+        /// <summary>
+        /// Load an <see cref="DynamicToml"/> from a string that contains XML.
+        /// </summary>
+        /// <param name="toml">A string that contains TOML.</param>
+        /// <returns>A <see cref="DynamicToml"/> populated from the string that contains TOML.</returns>
         public static dynamic Parse(IEnumerable<char> toml)
         {
             return new DynamicToml(TomlConvert.DeserializeXElement(toml));
@@ -168,6 +194,9 @@ namespace HyperTomlProcessor
         private readonly bool isArray;
         private TomlItemType arrayType = TomlItemType.None;
 
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="DynamicToml"/> represents a table.
+        /// </summary>
         public bool IsObject
         {
             get
@@ -176,6 +205,9 @@ namespace HyperTomlProcessor
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="DynamicToml"/> represents an array.
+        /// </summary>
         public bool IsArray
         {
             get
@@ -195,11 +227,21 @@ namespace HyperTomlProcessor
             return this.element.Elements().ElementAtOrDefault(index);
         }
 
+        /// <summary>
+        /// Determines whether the specified key has been defined.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns><c>true</c> if the property named the specified key has been defined.</returns>
         public bool IsDefined(string key)
         {
             return !this.isArray && this.Get(key) != null;
         }
 
+        /// <summary>
+        /// Determines whether the element of the specified index has been defined.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns><c>true</c> if the element has been defined.</returns>
         public bool IsDefined(int index)
         {
             return this.isArray && this.Get(index) != null;
@@ -216,16 +258,30 @@ namespace HyperTomlProcessor
             return false;
         }
 
+        /// <summary>
+        /// Deletes the property.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns><c>true</c> if the element is successfully found and removed.</returns>
         public bool Delete(string key)
         {
             return this.Delete(this.Get(key));
         }
 
+        /// <summary>
+        /// Deletes the element.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns><c>true</c> if the element is successfully found and removed.</returns>
         public bool Delete(int index)
         {
             return this.Delete(this.Get(index));
         }
 
+        /// <summary>
+        /// Adds the specified value.
+        /// </summary>
+        /// <param name="obj">The value of the element to add.</param>
         public void Add(object obj)
         {
             if (!this.isArray)
@@ -238,6 +294,11 @@ namespace HyperTomlProcessor
             this.element.Add(new XElement("item", attr, node));
         }
 
+        /// <summary>
+        /// Adds the specified key and value.
+        /// </summary>
+        /// <param name="key">The key of the element to add.</param>
+        /// <param name="obj">The value of the element to add.</param>
         public void Add(string key, object obj)
         {
             if (this.isArray)
@@ -262,6 +323,8 @@ namespace HyperTomlProcessor
             else if (this.arrayType != n)
                 throw new ArgumentException("The value is unmatched for the type of this array.");
         }
+
+#pragma warning disable 1591 // Ignore XML comments
 
         public override IEnumerable<string> GetDynamicMemberNames()
         {
@@ -493,21 +556,6 @@ namespace HyperTomlProcessor
             return false;
         }
 
-        public void WriteTo(TextWriter writer)
-        {
-            XUtils.WriteTo(this.element, writer);
-        }
-
-        public void WriteTo(Stream stream)
-        {
-            WriteTo(new StreamWriter(stream));
-        }
-
-        public override string ToString()
-        {
-            return XUtils.GetStreamString(this.WriteTo);
-        }
-
         public override bool Equals(object obj)
         {
             var dt = obj as DynamicToml;
@@ -517,6 +565,35 @@ namespace HyperTomlProcessor
         public override int GetHashCode()
         {
             return this.element.GetHashCode();
+        }
+
+#pragma warning restore 1591
+
+        /// <summary>
+        /// Writes the content of <see cref="DynamicToml"/> to the specified <see cref="TextWriter"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="TextWriter"/> to write this <see cref="DynamicToml"/> to.</param>
+        public void WriteTo(TextWriter writer)
+        {
+            XUtils.WriteTo(this.element, writer);
+        }
+
+        /// <summary>
+        /// Writes the content of <see cref="DynamicToml"/> to the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream to write this <see cref="DynamicToml"/> to.</param>
+        public void WriteTo(Stream stream)
+        {
+            WriteTo(new StreamWriter(stream));
+        }
+
+        /// <summary>
+        /// Returns the TOML for this element.
+        /// </summary>
+        /// <returns>A <see cref="String"/> containing the TOML.</returns>
+        public override string ToString()
+        {
+            return XUtils.GetStreamString(this.WriteTo);
         }
     }
 }

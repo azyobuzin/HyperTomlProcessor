@@ -443,16 +443,31 @@ namespace HyperTomlProcessor
             return root.ToXElement("root");
         }
 
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="toml">The TOML string to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
         public static XElement DeserializeXElement(IEnumerable<char> toml)
         {
             return DeserializeXElement(toml.AsStream());
         }
 
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> that contains the TOML to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
         public static XElement DeserializeXElement(TextReader reader)
         {
             return DeserializeXElement(reader.AsStream());
         }
 
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="stream">The stream that contains the TOML to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
         public static XElement DeserializeXElement(Stream stream)
         {
             return DeserializeXElement(new StreamReader(stream));
