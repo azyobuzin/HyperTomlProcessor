@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperTomlProcessor.Test
 {
     [DataContract]
-    class TestObject
+    public class TestObject
     {
         [DataMember]
         public ulong Id { get; set; }
@@ -94,7 +91,7 @@ namespace HyperTomlProcessor.Test
     }
 
     [DataContract]
-    class TestObjectContributor
+    public class TestObjectContributor
     {
         [DataMember]
         public uint Id { get; set; }
@@ -103,7 +100,7 @@ namespace HyperTomlProcessor.Test
     }
 
     [DataContract]
-    class TestObjectPlace
+    public class TestObjectPlace
     {
         [DataMember]
         public double[][][] BoudingBox { get; set; }

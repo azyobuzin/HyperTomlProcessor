@@ -47,13 +47,18 @@ namespace HyperTomlProcessor
             return XUtils.GetStreamString(w => SerializeObject(w, obj, factory));
         }
 
-        private static T DeserializeObject<T>(IStream<char> stream, Func<DataContractJsonSerializer> factory = null)
+        public static T DeserializeObject<T>(XElement toml, Func<DataContractJsonSerializer> factory = null)
         {
-            using (var xr = DeserializeXElement(stream).CreateReader())
+            using (var xr = toml.CreateReader())
             {
                 var s = factory != null ? factory() : new DataContractJsonSerializer(typeof(T));
                 return (T)s.ReadObject(xr);
             }
+        }
+
+        private static T DeserializeObject<T>(IStream<char> stream, Func<DataContractJsonSerializer> factory = null)
+        {
+            return DeserializeObject<T>(DeserializeXElement(stream), factory);
         }
 
         public static T DeserializeObject<T>(TextReader reader, Func<DataContractJsonSerializer> factory = null)

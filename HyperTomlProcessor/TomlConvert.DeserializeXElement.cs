@@ -204,12 +204,12 @@ namespace HyperTomlProcessor
 
             var integer = from s in sign
                           from i in digits
-                          select new TomlValue(TomlItemType.Integer, long.Parse(string.Concat(s, i)));
+                          select new TomlValue(TomlItemType.Integer, string.Concat(s, i));
 
             var floatv = from s in sign
                          from i in digits
                          from d in '.'.Satisfy().Right(digits)
-                         select new TomlValue(TomlItemType.Float, double.Parse(string.Concat(s, i, ".", d)));
+                         select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d));
 
             var boolv = Chars.Sequence("true").Select(_ => true)
                 .Or(Chars.Sequence("false").Select(_ => false))

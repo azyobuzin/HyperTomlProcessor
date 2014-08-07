@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -90,10 +91,11 @@ namespace HyperTomlProcessor.Test
         }
 
         [TestMethod]
-        public void SerializeAndDeserialize()
+        public void SetAndDeserialize()
         {
-            var toml = DynamicToml.Serialize(TestObject.Create());
-            TestObject obj = DynamicToml.Parse(toml).Deserialize<TestObject>();
+            var dt = DynamicToml.CreateTable();
+            dt.root = TestObject.Create(); // 'root' でないとデシリアライズできない
+            var obj = TomlConvert.DeserializeObject<TestObject>((XElement)dt.root);
             TestObject.Test(obj);
         }
     }

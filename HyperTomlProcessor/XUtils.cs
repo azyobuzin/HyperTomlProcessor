@@ -68,7 +68,7 @@ namespace HyperTomlProcessor
             }
             return true;
         }
-        
+
         internal static string GetJsonTypeString(TomlItemType type)
         {
             switch (type)
@@ -93,12 +93,10 @@ namespace HyperTomlProcessor
             }
         }
 
-        private static string GetTypeAttr(XElement xe)
+        internal static string GetTypeAttr(XElement xe)
         {
             var type = xe.Attribute("type");
-            if (type == null)
-                throw new SerializationException("'type' attribute must exist.");
-            return type.Value;
+            return type != null ? type.Value : "string";
         }
 
         internal static TomlItemType? GetTomlAttr(XElement xe)
@@ -165,7 +163,7 @@ namespace HyperTomlProcessor
                     case '\\':
                         return "\\\\";
                 }
-                if (0 <= c && c <= 0x1F)
+                if (0 <= c && c <= 0x1F && c != '\r' && c != '\n')
                     return "\\u" + ((int)c).ToString("X4");
                 return c.ToString();
             }));
@@ -239,10 +237,14 @@ namespace HyperTomlProcessor
                     WriteFloat((double)xe, writer);
                     break;
                 default:
-                    var i = (long)xe;
-                    var f = (double)xe;
-                    if (i == f) WriteInteger(i, writer);
-                    else WriteFloat(f, writer);
+                    try
+                    {
+                        WriteInteger((long)xe, writer);
+                    }
+                    catch (FormatException)
+                    {
+                        WriteFloat((double)xe, writer);
+                    }
                     break;
             }
         }

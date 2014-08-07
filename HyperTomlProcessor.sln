@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{0C91DE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperTomlProcessor.Test", "HyperTomlProcessor.Test\HyperTomlProcessor.Test.csproj", "{1EAF4889-5C14-4546-9932-0C7EDE393C68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperTomlProcessor.Test.Cmd", "HyperTomlProcessor.Test.Cmd\HyperTomlProcessor.Test.Cmd.csproj", "{E50D8152-387C-4D8C-81FF-FC0FAA371DE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{1EAF4889-5C14-4546-9932-0C7EDE393C68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1EAF4889-5C14-4546-9932-0C7EDE393C68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1EAF4889-5C14-4546-9932-0C7EDE393C68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E50D8152-387C-4D8C-81FF-FC0FAA371DE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E50D8152-387C-4D8C-81FF-FC0FAA371DE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E50D8152-387C-4D8C-81FF-FC0FAA371DE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E50D8152-387C-4D8C-81FF-FC0FAA371DE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

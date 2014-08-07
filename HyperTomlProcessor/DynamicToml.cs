@@ -4,10 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Xml.Linq;
 
 namespace HyperTomlProcessor
@@ -99,15 +96,29 @@ namespace HyperTomlProcessor
                         return new XElement("item", CreateTypeAttr(type), ToXml(type, o));
                     });
                 case TomlItemType.Table:
-                    return obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                        .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
-                        .Select(p => new { Name = p.Name, Value = p.GetValue(obj, null) })
-                        .Where(x => x.Value != null) // null cannot be serialized
-                        .Select(x =>
-                        {
-                            var type = GetTomlType(x.Value);
-                            return new XElement(x.Name, CreateTypeAttr(type), ToXml(type, x.Value));
-                        });
+                    var xd = new XDocument();
+                    using (var xw = xd.CreateWriter())
+                    {
+                        var s = new DataContractJsonSerializer(obj.GetType());
+                        s.WriteObject(xw, obj);
+                    }
+                    var root = new XElement(xd.Root);
+                    foreach (var xe in root.Descendants())
+                    {
+                        var type = XUtils.GetTypeAttr(xe);
+                        if (type == "null")
+                            xe.Remove();
+                        else
+                            xe.SetAttributeValue("toml",
+                                (type == "string" ? TomlItemType.BasicString
+                                : type == "number" ? (xe.Value.Any(c => c == '.' || c == 'e' || c == 'E')
+                                    ? TomlItemType.Float : TomlItemType.Integer)
+                                : type == "boolean" ? TomlItemType.Boolean
+                                : type == "array" ? TomlItemType.Array
+                                : TomlItemType.Table).ToString()
+                            );
+                    }
+                    return root.Elements();
                 default:
                     return obj;
             }
@@ -136,18 +147,6 @@ namespace HyperTomlProcessor
         public static dynamic Parse(IEnumerable<char> toml)
         {
             return new DynamicToml(TomlConvert.DeserializeXElement(toml));
-        }
-
-        public static void Serialize(object obj, TextWriter writer)
-        {
-            var type = GetTomlType(obj);
-            var elm = new XElement("root", CreateTypeAttr(type), ToXml(type, obj));
-            XUtils.WriteTo(elm, writer);
-        }
-
-        public static string Serialize(object obj)
-        {
-            return XUtils.GetStreamString(w => Serialize(obj, w));
         }
 
         private DynamicToml(XElement elm)
@@ -413,12 +412,17 @@ namespace HyperTomlProcessor
             return false;
         }
 
+        private IEnumerable<KeyValuePair<string, object>> ToKvpEnumerable()
+        {
+            return this.element.Elements().Select(xe =>
+                new KeyValuePair<string, object>(XUtils.GetKey(xe), ToValue(xe)));
+        }
+
         private IEnumerable<object> ToEnumerable()
         {
             return this.isArray
                 ? this.element.Elements().Select(ToValue)
-                : this.element.Elements().Select(xe =>
-                    (object)new KeyValuePair<string, object>(XUtils.GetKey(xe), ToValue(xe)));
+                : this.ToKvpEnumerable().Cast<object>();
         }
 
         IEnumerator<object> IEnumerable<object>.GetEnumerator()
@@ -431,196 +435,62 @@ namespace HyperTomlProcessor
             return this.ToEnumerable().GetEnumerator();
         }
 
-        private object Deserialize(Type type)
-        {
-            if (this.isArray)
-            {
-                return type.IsArray
-                    ? this.DeserializeArray(type)
-                    : this.DeserializeCollection(type);
-            }
-            else
-            {
-                Type keyType;
-                Type valueType;
-                if (ReflectionUtils.TryGetDictionaryType(type, out keyType, out valueType)
-                    && keyType.IsAssignableFrom(typeof(string)))
-                {
-                    try
-                    {
-                        return this.DeserializeDictionary(type, keyType, valueType);
-                    }
-                    catch
-                    { }
-                }
-                return this.DeserializeObject(type);
-            }
-        }
-
-        private static object DeserializeValue(XElement xe, Type type)
-        {
-            var value = ToValue(xe);
-            var dt = value as DynamicToml;
-            if (dt != null)
-            {
-                if (type == typeof(DynamicToml))
-                    return dt;
-                value = dt.Deserialize(type);
-            }
-
-            var valueType = value.GetType();
-            if (type.IsAssignableFrom(valueType))
-                return value;
-            if (typeof(IConvertible).IsAssignableFrom(type))
-                return Convert.ChangeType(value, type);
-            throw new SerializationException("Could not convert to " + type.Name);
-        }
-
-        private object DeserializeArray(Type type)
-        {
-            var elm = this.element.Elements().ToArray();
-            var elmType = type.GetElementType();
-            var array = new object[elm.Length];
-            for (var i = 0; i < elm.Length; i++)
-                array[i] = DeserializeValue(elm[i], elmType);
-            var result = Array.CreateInstance(elmType, elm.Length);
-            Array.Copy(array, result, elm.Length); // faster than dynamic
-            return result;
-        }
-
-        private static Dictionary<Type, Action<object, IEnumerator<XElement>>> addToCollectionActionCache;
-        private static Action<object, IEnumerator<XElement>> GetAddToCollectionAction(Type collectionType, Type elmType)
-        {
-            Action<object, IEnumerator<XElement>> action;
-            if (addToCollectionActionCache == null)
-                addToCollectionActionCache = new Dictionary<Type, Action<object, IEnumerator<XElement>>>();
-            else if (addToCollectionActionCache.TryGetValue(collectionType, out action))
-                return action;
-
-            var objPrm = Expression.Parameter(typeof(object));
-            var enumeratorType = typeof(IEnumerator<XElement>);
-            var elmsPrm = Expression.Parameter(enumeratorType);
-            var collectionVar = Expression.Variable(collectionType);
-            var breakLabel = Expression.Label();
-
-            var convExpr = Expression.Assign(collectionVar, Expression.TypeAs(objPrm, collectionType));
-            var loopCondExpr = Expression.IfThen(
-                Expression.Not(
-                    Expression.Call(elmsPrm, typeof(IEnumerator).GetMethod("MoveNext"))
-                ),
-                Expression.Break(breakLabel)
-            );
-            var callDeserializeValueExpr = Expression.Convert(
-                Expression.Call(
-                    typeof(DynamicToml).GetMethod("DeserializeValue", BindingFlags.NonPublic | BindingFlags.Static),
-                    Expression.Property(elmsPrm, enumeratorType.GetProperty("Current")),
-                    Expression.Constant(elmType)
-                ),
-                elmType
-            );
-            var addExpr = Expression.Call(
-                collectionVar,
-                collectionType.GetMethod("Add", new[] { elmType }),
-                callDeserializeValueExpr
-            );
-            var body = Expression.Block(
-                new[] { collectionVar },
-                convExpr,
-                Expression.Loop(Expression.Block(loopCondExpr, addExpr), breakLabel)
-            );
-
-            action = Expression.Lambda<Action<object, IEnumerator<XElement>>>(body, new[] { objPrm, elmsPrm }).Compile();
-            addToCollectionActionCache[collectionType] = action;
-
-            return action;
-        }
-
-        private object DeserializeCollection(Type type)
-        {
-            object collection;
-            var elmType = ReflectionUtils.GetCollectionType(type);
-            if (type.IsAssignableFrom(typeof(List<object>)))
-                collection = new List<object>();
-            else if (type.IsAssignableFrom(typeof(ArrayList)))
-                collection = new ArrayList();
-            else if (type.IsInterface)
-            {
-                if (!typeof(IEnumerable).IsAssignableFrom(type))
-                    throw new SerializationException(type.Name + " does not implement IEnumerable.");
-
-                var listType = typeof(List<>).MakeGenericType(elmType);
-                if (!type.IsAssignableFrom(listType))
-                    throw new SerializationException("Could not make List<" + elmType.Name + ">.");
-                collection = Activator.CreateInstance(listType);
-            }
-            else
-                collection = Activator.CreateInstance(type);
-
-            using (var enumerator = this.element.Elements().GetEnumerator())
-                GetAddToCollectionAction(collection.GetType(), elmType)(collection, enumerator);
-
-            return collection;
-        }
-
-        private object DeserializeObject(Type type)
-        {
-            var result = Activator.CreateInstance(type);
-            var dict = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanWrite && p.GetIndexParameters().Length == 0)
-                .ToDictionary(p => p.Name);
-            foreach (var xe in this.element.Elements())
-            {
-                var key = XUtils.GetKey(xe);
-                PropertyInfo p;
-                if (dict.TryGetValue(key, out p))
-                {
-                    var isDynamic = p.GetSetMethod().GetParameters()[0]
-                        .GetCustomAttributes(typeof(DynamicAttribute), false).Length != 0;
-                    p.SetValue(result, DeserializeValue(xe, isDynamic ? typeof(DynamicToml) : p.PropertyType), null);
-                }
-            }
-            return result;
-        }
-
-        private object DeserializeDictionary(Type type, Type keyType, Type valueType)
-        {
-            dynamic dic; // なんで ID<TKey, TValue> が ID を継承してないんじゃ！！
-            if (type.IsAssignableFrom(typeof(Dictionary<string, object>)))
-                dic = new Dictionary<string, object>();
-            else if (type.IsAssignableFrom(typeof(Hashtable)))
-                dic = new Hashtable();
-            else if (type.IsInterface)
-            {
-                var dicType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
-                if (!type.IsAssignableFrom(dicType))
-                    throw new SerializationException(string.Format("Could not make Dictionary<{0}, {1}>.", keyType.Name, valueType.Name));
-                dic = Activator.CreateInstance(dicType);
-            }
-            else
-                dic = Activator.CreateInstance(type);
-
-            foreach (var xe in this.element.Elements())
-                dic.Add(XUtils.GetKey(xe), (dynamic)DeserializeValue(xe, valueType));
-
-            return dic;
-        }
-
-        public T Deserialize<T>()
-        {
-            return (T)this.Deserialize(typeof(T));
-        }
-
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
-            try
+            if (binder.Type.IsAssignableFrom(typeof(List<object>)))
             {
-                result = this.Deserialize(binder.Type);
+                result = this.ToEnumerable().ToList();
                 return true;
             }
-            catch (Exception ex)
+            if (binder.Type.IsAssignableFrom(typeof(ArrayList)))
             {
-                throw new InvalidCastException("Could not convert.", ex);
+                var al = new ArrayList();
+                foreach (var o in this.ToEnumerable())
+                    al.Add(o);
+                result = al;
+                return true;
             }
+            if (binder.Type.IsAssignableFrom(typeof(object[])))
+            {
+                result = this.ToEnumerable().ToArray();
+                return true;
+            }
+            if (!this.isArray)
+            {
+                if (binder.Type.IsAssignableFrom(typeof(List<KeyValuePair<string, object>>)))
+                {
+                    result = this.ToKvpEnumerable().ToList();
+                    return true;
+                }
+                if (binder.Type.IsAssignableFrom(typeof(Dictionary<string, object>)))
+                {
+                    var dic = new Dictionary<string, object>();
+                    foreach (var xe in this.element.Elements())
+                        dic.Add(XUtils.GetKey(xe), ToValue(xe));
+                    result = dic;
+                    return true;
+                }
+                if (binder.Type.IsAssignableFrom(typeof(Hashtable)))
+                {
+                    var ht = new Hashtable();
+                    foreach (var xe in this.element.Elements())
+                        ht.Add(XUtils.GetKey(xe), ToValue(xe));
+                    result = ht;
+                    return true;
+                }
+                if (binder.Type.IsAssignableFrom(typeof(KeyValuePair<string, object>[])))
+                {
+                    result = this.ToKvpEnumerable().ToArray();
+                    return true;
+                }
+            }
+            if (binder.Type.IsAssignableFrom(typeof(XElement)))
+            {
+                result = this.element;
+                return true;
+            }
+            result = null;
+            return false;
         }
 
         public void WriteTo(TextWriter writer)

@@ -1,6 +1,6 @@
 ﻿namespace HyperTomlProcessor.Test
 {
-    static class Examples
+    public static class Examples
     {
         //The MIT License
 
