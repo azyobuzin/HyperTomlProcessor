@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HelpKI>
+  <HelpKINode Title="Add method" Url="html/fbf87df8-50a0-c93d-3676-47b4e537e7df.htm" />
+  <HelpKINode Title="CreateArray method" Url="html/e8cfb325-ce4c-c8e8-54ee-27b357654521.htm" />
+  <HelpKINode Title="CreateTable method" Url="html/85932ca4-e8ca-9e80-7235-30d10ccfdfdb.htm" />
+  <HelpKINode Title="Delete method" Url="html/2fba6793-227a-3c98-26b2-d9d12bf5d55c.htm" />
+  <HelpKINode Title="DeserializeObject method" Url="html/427e99a0-b47d-ec00-e711-ae0d8e1f1027.htm" />
+  <HelpKINode Title="DeserializeXElement method" Url="html/03bd5ce3-7346-c882-2685-4533713288c4.htm" />
+  <HelpKINode Title="DynamicToml class">
+    <HelpKINode Title="DynamicToml Class" Url="html/59f27c6a-7a3b-f1d6-7cbe-3a2d32af086b.htm" />
+    <HelpKINode Title="about DynamicToml class" Url="html/59f27c6a-7a3b-f1d6-7cbe-3a2d32af086b.htm" />
+    <HelpKINode Title="methods" Url="html/1e7879cc-66f4-ff03-0163-f221aa00601d.htm" />
+    <HelpKINode Title="properties" Url="html/ad7031b9-2a59-1e60-b01c-46cfec34fdb1.htm" />
+  </HelpKINode>
+  <HelpKINode Title="DynamicToml.Add method" Url="html/fbf87df8-50a0-c93d-3676-47b4e537e7df.htm" />
+  <HelpKINode Title="DynamicToml.CreateArray method" Url="html/e8cfb325-ce4c-c8e8-54ee-27b357654521.htm" />
+  <HelpKINode Title="DynamicToml.CreateTable method" Url="html/85932ca4-e8ca-9e80-7235-30d10ccfdfdb.htm" />
+  <HelpKINode Title="DynamicToml.Delete method" Url="html/2fba6793-227a-3c98-26b2-d9d12bf5d55c.htm" />
+  <HelpKINode Title="DynamicToml.Equals method" Url="html/b98e34a1-defc-0166-d6d3-b0f214bf439f.htm" />
+  <HelpKINode Title="DynamicToml.GetDynamicMemberNames method" Url="html/15478575-a67a-5de2-93d3-263b5b83fc82.htm" />
+  <HelpKINode Title="DynamicToml.GetHashCode method" Url="html/0d3734c7-56c8-3961-b188-2d70f4e0f926.htm" />
+  <HelpKINode Title="DynamicToml.IsArray property" Url="html/a7c9b10c-cbb3-0027-268b-50c47770190a.htm" />
+  <HelpKINode Title="DynamicToml.IsDefined method" Url="html/6d588eee-104c-bf0d-129e-0142f72f98d5.htm" />
+  <HelpKINode Title="DynamicToml.IsObject property" Url="html/995812c1-5170-8a87-311f-b5ab55123700.htm" />
+  <HelpKINode Title="DynamicToml.Parse method" Url="html/59fb1c29-c657-f27d-fbbd-daefcb45e1e6.htm" />
+  <HelpKINode Title="DynamicToml.ToString method" Url="html/cfaaab44-c3ab-6e96-c591-1b707441cf9f.htm" />
+  <HelpKINode Title="DynamicToml.TryConvert method" Url="html/87cda159-3eff-6d0b-15d0-b8ab5a265591.htm" />
+  <HelpKINode Title="DynamicToml.TryGetIndex method" Url="html/4567c082-92c7-c912-c539-4f748da65f94.htm" />
+  <HelpKINode Title="DynamicToml.TryGetMember method" Url="html/ebad390e-adf0-6774-7559-b14ec2423fca.htm" />
+  <HelpKINode Title="DynamicToml.TryInvoke method" Url="html/5ca8f59c-9b1f-1c0b-2596-10e064a7f05f.htm" />
+  <HelpKINode Title="DynamicToml.TryInvokeMember method" Url="html/7f243b72-fb1c-f310-fc84-15852ccc049c.htm" />
+  <HelpKINode Title="DynamicToml.TrySetIndex method" Url="html/a7ed76b3-2a0f-7894-3769-b1d5b2f07177.htm" />
+  <HelpKINode Title="DynamicToml.TrySetMember method" Url="html/3b981d19-2d63-df6a-12a2-06e656993d3d.htm" />
+  <HelpKINode Title="DynamicToml.WriteTo method" Url="html/1a816f03-876c-c526-b96b-3a11c483d4c5.htm" />
+  <HelpKINode Title="Equals method" Url="html/b98e34a1-defc-0166-d6d3-b0f214bf439f.htm" />
+  <HelpKINode Title="GetDynamicMemberNames method" Url="html/15478575-a67a-5de2-93d3-263b5b83fc82.htm" />
+  <HelpKINode Title="GetHashCode method" Url="html/0d3734c7-56c8-3961-b188-2d70f4e0f926.htm" />
+  <HelpKINode Title="HyperTomlProcessor namespace" Url="html/77dc5bfe-2b27-a82d-b305-683923f4b451.htm" />
+  <HelpKINode Title="HyperTomlProcessor.DynamicToml class" Url="html/59f27c6a-7a3b-f1d6-7cbe-3a2d32af086b.htm" />
+  <HelpKINode Title="HyperTomlProcessor.TomlConvert class" Url="html/7053d68f-8f8d-a6f9-33a8-2420868df887.htm" />
+  <HelpKINode Title="IsArray property" Url="html/a7c9b10c-cbb3-0027-268b-50c47770190a.htm" />
+  <HelpKINode Title="IsDefined method" Url="html/6d588eee-104c-bf0d-129e-0142f72f98d5.htm" />
+  <HelpKINode Title="IsObject property" Url="html/995812c1-5170-8a87-311f-b5ab55123700.htm" />
+  <HelpKINode Title="Parse method" Url="html/59fb1c29-c657-f27d-fbbd-daefcb45e1e6.htm" />
+  <HelpKINode Title="SerializeObject method" Url="html/cbb9d60a-8c16-5532-505c-35048270745f.htm" />
+  <HelpKINode Title="SerializeXElement method" Url="html/31c1469e-26e3-1219-58d1-1d7627f5f973.htm" />
+  <HelpKINode Title="TomlConvert class">
+    <HelpKINode Title="TomlConvert Class" Url="html/7053d68f-8f8d-a6f9-33a8-2420868df887.htm" />
+    <HelpKINode Title="about TomlConvert class" Url="html/7053d68f-8f8d-a6f9-33a8-2420868df887.htm" />
+    <HelpKINode Title="methods" Url="html/089c2f2b-ca95-4688-7517-f225da3501c2.htm" />
+  </HelpKINode>
+  <HelpKINode Title="TomlConvert.DeserializeObject method" Url="html/427e99a0-b47d-ec00-e711-ae0d8e1f1027.htm" />
+  <HelpKINode Title="TomlConvert.DeserializeXElement method" Url="html/03bd5ce3-7346-c882-2685-4533713288c4.htm" />
+  <HelpKINode Title="TomlConvert.SerializeObject method" Url="html/cbb9d60a-8c16-5532-505c-35048270745f.htm" />
+  <HelpKINode Title="TomlConvert.SerializeXElement method" Url="html/31c1469e-26e3-1219-58d1-1d7627f5f973.htm" />
+  <HelpKINode Title="ToString method" Url="html/cfaaab44-c3ab-6e96-c591-1b707441cf9f.htm" />
+  <HelpKINode Title="TryConvert method" Url="html/87cda159-3eff-6d0b-15d0-b8ab5a265591.htm" />
+  <HelpKINode Title="TryGetIndex method" Url="html/4567c082-92c7-c912-c539-4f748da65f94.htm" />
+  <HelpKINode Title="TryGetMember method" Url="html/ebad390e-adf0-6774-7559-b14ec2423fca.htm" />
+  <HelpKINode Title="TryInvoke method" Url="html/5ca8f59c-9b1f-1c0b-2596-10e064a7f05f.htm" />
+  <HelpKINode Title="TryInvokeMember method" Url="html/7f243b72-fb1c-f310-fc84-15852ccc049c.htm" />
+  <HelpKINode Title="TrySetIndex method" Url="html/a7ed76b3-2a0f-7894-3769-b1d5b2f07177.htm" />
+  <HelpKINode Title="TrySetMember method" Url="html/3b981d19-2d63-df6a-12a2-06e656993d3d.htm" />
+  <HelpKINode Title="WriteTo method" Url="html/1a816f03-876c-c526-b96b-3a11c483d4c5.htm" />
+</HelpKI>
