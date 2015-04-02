@@ -2,23 +2,23 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>HyperTomlProcessor</id>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <title>HyperTomlProcessor</title>
         <authors>azyobuzin</authors>
         <licenseUrl>https://github.com/azyobuzin/HyperTomlProcessor/blob/master/LICENSE.txt</licenseUrl>
         <projectUrl>https://github.com/azyobuzin/HyperTomlProcessor</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>TOML Parser for .NET</description>
-        <copyright>(C) 2014 azyobuzin</copyright>
+        <copyright>(C) 2014-2015 azyobuzin</copyright>
         <tags>TOML</tags>
         <dependencies>
-            <dependency id="Parseq" version="2.1.1.1" />
+            <dependency id="Parseq" version="3.0.0.0" />
         </dependencies>
     </metadata>
     <files>
-        <file src="HyperTomlProcessor.Net40\bin\Release\HyperTomlProcessor.dll" target="lib\net40-client\HyperTomlProcessor.dll" />
-        <file src="HyperTomlProcessor.Net40\bin\Release\HyperTomlProcessor.XML" target="lib\net40-client\HyperTomlProcessor.XML" />
-        <file src="HyperTomlProcessor\bin\Release\HyperTomlProcessor.dll" target="lib\net45\HyperTomlProcessor.dll" />
-        <file src="HyperTomlProcessor\bin\Release\HyperTomlProcessor.XML" target="lib\net45\HyperTomlProcessor.XML" />
+        <file src="HyperTomlProcessor.Net40\bin\Release\HyperTomlProcessor.dll" target="lib\net40-client" />
+        <file src="HyperTomlProcessor.Net40\bin\Release\HyperTomlProcessor.XML" target="lib\net40-client" />
+        <file src="HyperTomlProcessor\bin\Release\HyperTomlProcessor.dll" target="lib\net45" />
+        <file src="HyperTomlProcessor\bin\Release\HyperTomlProcessor.XML" target="lib\net45" />
     </files>
 </package>

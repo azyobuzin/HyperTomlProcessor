@@ -21,7 +21,7 @@ namespace HyperTomlProcessor
         {
             XUtils.WriteTo(toml, writer);
         }
-        
+
         /// <summary>
         /// Serializes the <see cref="XElement"/> to TOML.
         /// </summary>
@@ -150,7 +150,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private static T DeserializeObject<T>(IStream<char> stream, Func<DataContractJsonSerializer> factory = null)
+        private static T DeserializeObject<T>(ITokenStream<char> stream, Func<DataContractJsonSerializer> factory = null)
         {
             return DeserializeObject<T>(DeserializeXElement(stream), factory);
         }
@@ -232,7 +232,7 @@ namespace HyperTomlProcessor
         /// <param name="stream">The stream that contains the TOML to deserialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(Stream stream,DataContractJsonSerializerSettings settings)
+        public static T DeserializeObject<T>(Stream stream, DataContractJsonSerializerSettings settings)
         {
             return DeserializeObject<T>(stream, MakeFactory(typeof(T), settings));
         }
@@ -246,7 +246,7 @@ namespace HyperTomlProcessor
         /// <returns>The deserialized object.</returns>
         public static T DeserializeObject<T>(IEnumerable<char> toml, DataContractJsonSerializerSettings settings)
         {
-            return DeserializeObject<T>(toml,  MakeFactory(typeof(T), settings));
+            return DeserializeObject<T>(toml, MakeFactory(typeof(T), settings));
         }
 #endif
     }
