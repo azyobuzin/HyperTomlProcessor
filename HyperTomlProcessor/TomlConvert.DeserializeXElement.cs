@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 using Parseq;
 using Parseq.Combinators;
@@ -17,13 +18,13 @@ namespace HyperTomlProcessor
 
         private class TableInfo
         {
-            public readonly string Name;
+            public readonly string[] Name;
             public readonly Comment Comment;
             public readonly bool IsArrayOfTable;
 
-            public TableInfo(IEnumerable<char> name, Comment comment, bool isArrayOfTable)
+            public TableInfo(IEnumerable<IEnumerable<char>> name, Comment comment, bool isArrayOfTable)
             {
-                this.Name = string.Concat(name);
+                this.Name = name.Select(x => string.Concat(x)).ToArray();
                 this.Comment = comment;
                 this.IsArrayOfTable = isArrayOfTable;
             }
@@ -153,27 +154,7 @@ namespace HyperTomlProcessor
             var comment = notNewlineChar.Many0()
                 .Between(Chars.Satisfy('#').Ignore(), newlineOrEof)
                 .Select(c => new Comment(c));
-
-            var tableNameChar = Chars.NoneOf('\r', '\n', ']');
             var newlineOrComment = newlineOrEof.Select(_ => (Comment)null).Or(comment);
-
-            var tableName = tableNameChar.Many1()
-                .Between(
-                    spacesOrNewlines.SeqIgnore(Chars.Satisfy('[')),
-                    Chars.Satisfy(']').SeqIgnore(spaces)
-                );
-            var tableNameLine = from t in tableName
-                                from c in newlineOrComment
-                                select new TableInfo(t, c, false);
-
-            var arrayOfTableName = tableNameChar.Many1()
-                .Between(
-                    spacesOrNewlines.SeqIgnore(Chars.Sequence("[[")),
-                    Chars.Sequence("]]").SeqIgnore(spaces)
-                );
-            var arrayOfTableNameLine = from t in arrayOfTableName
-                                       from c in newlineOrComment
-                                       select new TableInfo(t, c, true);
 
             var escaped = Chars.Satisfy('\\').Right(Combinator.Choice(
                 Chars.Satisfy('b').Select(_ => "\b"),
@@ -222,40 +203,55 @@ namespace HyperTomlProcessor
                 .Select(c => new TomlValue(TomlItemType.MultilineLiteralString, c.Unfold().RemoveFirstNewLine()));
 
             var sign = Chars.OneOf('+', '-').Optional().Select(o => o.Case(() => "", c => c.ToString()));
-            var digits = Chars.Digit().Many1().Select(string.Concat);
+            var digit = Chars.Satisfy(c => c >= '0' && c <= '9');
+            var digits = digit.Many1();
+            //var digitsWithUnderscores = digits.Pipe(
+            //    Chars.Satisfy('_').Right(digits).Many0(),
+            //    (first, rest) => string.Concat(first) + string.Concat(rest.Unfold())
+            //);
+            var digitsWithUnderscores = digits.SepBy1(Chars.Satisfy('_').Ignore()).Map(Unfold);
 
             var integer = from s in sign
-                          from i in digits
+                          from i in digitsWithUnderscores
                           select new TomlValue(TomlItemType.Integer, string.Concat(s, i));
 
             var floatv = from s in sign
-                         from i in digits
-                         from d in Chars.Satisfy('.').Right(digits)
-                         select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d));
+                         from i in digitsWithUnderscores
+                         from d in Chars.Satisfy('.').Right(digitsWithUnderscores)
+                         from e in Chars.OneOf('e', 'E').Right(digitsWithUnderscores)
+                             .Optional().Map(x => x.HasValue ? ("e" + x.Value) : "")
+                         select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d, e));
 
             var boolv = Chars.Sequence("true").Select(_ => true)
                 .Or(Chars.Sequence("false").Select(_ => false))
                 .Select(b => new TomlValue(TomlItemType.Boolean, b));
 
-            // ISO 8601
-            var twoDigits = Chars.Digit().Repeat(2).Select(c => int.Parse(string.Concat(c)));
-            var utcTimezone = Combinator.Choice(
-                Chars.Sequence("Z"), Chars.Sequence("+0000"), Chars.Sequence("-0000"),
-                Chars.Sequence("+00:00"), Chars.Sequence("-00:00"),
-                Chars.Sequence("+00"), Chars.Sequence("-00")
-            );
-            var datetime = from y in Chars.Digit().Repeat(4).Select(c => int.Parse(string.Concat(c)))
-                           from M in Chars.Satisfy('-').Optional().Right(twoDigits)
-                           from d in Chars.Satisfy('-').Optional().Right(twoDigits)
-                           from h in Chars.Satisfy('T').Right(twoDigits)
-                           from ms in
-                               (from m in Chars.Satisfy(':').Right(twoDigits)
-                                from s in Chars.Satisfy(':').Right(twoDigits).Optional()
-                                select Tuple.Create(m, s.HasValue ? s.Value : 0)).Optional().Left(utcTimezone)
-                           select new TomlValue(TomlItemType.Datetime, new DateTimeOffset(
-                               y, M, d, h, ms.HasValue ? ms.Value.Item1 : 0, ms.HasValue ? ms.Value.Item2 : 0,
-                               TimeSpan.Zero
-                           ));
+            var hyphen = Chars.Satisfy('-');
+            var colon = Chars.Satisfy(':');
+            var twoDigits = digit.Repeat(2);
+            var datetime = digit.Repeat(4) // year
+                .Append(hyphen).Append(twoDigits) // month
+                .Append(hyphen).Append(twoDigits) // day
+                .Append(
+                    Chars.Sequence("T").Append(twoDigits) // hour
+                        .Append(colon).Append(twoDigits) // minute
+                        .Append(colon).Append(twoDigits) // second
+                        .Append(
+                            Chars.Sequence(".").Append(digits).Optional()
+                        )
+                        .Append(
+                            Chars.Sequence("Z")
+                                .Or(
+                                    Chars.Sequence("+").Or(Chars.Sequence("-"))
+                                        .Append(twoDigits)
+                                        .Append(Chars.Satisfy(':'))
+                                        .Append(twoDigits)
+                                )
+                                .Optional()
+                        )
+                        .Optional()
+                )
+                .Map(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
 
             Parser<char, TomlValue> arrayRef = null;
             var array = Delayed.Return(() => arrayRef);
@@ -282,17 +278,37 @@ namespace HyperTomlProcessor
                 createArrayParser(Combinator.Lazy(array))
             );
 
+            var key = Chars.Satisfy(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
+                .Many1().Or(basicString.Map(x => (string)x.Value));
             var value = Combinator.Choice(
                 multilineBasicString, basicString, multilineLiteralString, literalString, // 順番大事
                 datetime, integer, floatv, boolv, array.Force()
             );
-            var keyValue = from k in Chars.NoneOf('\t', ' ', '\r', '\n', '=', '#').Many1().Between(spacesOrNewlines, spaces)
+            var keyValue = from k in key.Between(spacesOrNewlines, spaces)
                            from v in Chars.Satisfy('=').Right(value.Between(spaces, spaces))
                            from c in newlineOrComment
                            select (TableNode)new KeyValue(k, v, c);
 
+            var tableName = key.Between(spaces, spaces).SepBy1(Chars.Satisfy('.').Ignore());
+
+            var startTable = tableName.Between(
+                spacesOrNewlines.SeqIgnore(Chars.Satisfy('[')),
+                Chars.Satisfy(']').SeqIgnore(spaces)
+            );
+            var startTableLine = from t in startTable
+                                 from c in newlineOrComment
+                                 select new TableInfo(t, c, false);
+
+            var startArrayOfTable = tableName.Between(
+                spacesOrNewlines.SeqIgnore(Chars.Sequence("[[")),
+                Chars.Sequence("]]").SeqIgnore(spaces)
+            );
+            var startArrayOfTableLine = from t in startArrayOfTable
+                                        from c in newlineOrComment
+                                        select new TableInfo(t, c, true);
+
             var nodes = Combinator.Choice(keyValue, spacesOrNewlines.Right(comment)).Many0();
-            var table = from t in Combinator.Choice(tableNameLine, arrayOfTableNameLine)
+            var table = from t in Combinator.Choice(startTableLine, startArrayOfTableLine)
                         from c in nodes
                         select new Table(t, c);
 
@@ -375,12 +391,12 @@ namespace HyperTomlProcessor
 
         private class TableTree
         {
-            public readonly string FullName;
+            public readonly string[] FullName;
             public readonly IEnumerable<TableNode> Nodes;
             public readonly Dictionary<string, List<TableTree>> ArrayOfTables = new Dictionary<string, List<TableTree>>();
             public readonly Dictionary<string, TableTree> Children = new Dictionary<string, TableTree>();
 
-            public TableTree(string fullName, IEnumerable<TableNode> nodes)
+            public TableTree(string[] fullName, IEnumerable<TableNode> nodes)
             {
                 this.FullName = fullName;
                 this.Nodes = nodes ?? Enumerable.Empty<TableNode>();
@@ -404,7 +420,8 @@ namespace HyperTomlProcessor
 
         private static FormatException ThrowFormatException(string message, ITokenStream<char> stream)
         {
-            throw new FormatException(string.Join(" ", message, stream.Current.Case(() => "", x => x.Item1.ToString())));
+            throw new FormatException(string.Join(" ", message,
+                stream.Current.Case(() => "", x => x.Item1.Convert((line, col) => string.Format("Line:{0} Column:{1}", line, col)))));
         }
 
         internal static XElement DeserializeXElement(ITokenStream<char> stream)
@@ -421,12 +438,12 @@ namespace HyperTomlProcessor
             if (result.Item1.MoveNext().Current.HasValue)
                 ThrowFormatException("Parse stopped", result.Item1);
 
-            var root = new TableTree("", result.Item2.RootNodes);
+            var root = new TableTree(new string[0], result.Item2.RootNodes);
 
             foreach (var t in result.Item2.Tables)
             {
                 var current = root;
-                var name = t.Info.Name.Split('.');
+                var name = t.Info.Name;
                 for (var i = 0; i < name.Length - 1; i++)
                 {
                     var currentName = name[i];
@@ -436,7 +453,7 @@ namespace HyperTomlProcessor
                         current = current.Children[currentName];
                     else
                     {
-                        var newt = new TableTree(string.Join(".", name.Take(i + 1)), null);
+                        var newt = new TableTree(name.Take(i + 1).ToArray(), null);
                         current.Children.Add(currentName, newt);
                         current = newt;
                     }
