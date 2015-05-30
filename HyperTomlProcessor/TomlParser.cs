@@ -419,6 +419,25 @@ namespace HyperTomlProcessor
 
             Parser<char, TomlValue> arrayRef = null;
             var array = Delayed.Return(() => arrayRef);
+            Parser<char, TomlValue> inlineTableRef = null;
+            var inlineTable = Delayed.Return(() => inlineTableRef);
+
+            var key = Chars.Satisfy(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
+                .Many1().Or(basicString.Map(x => (string)x.Value));
+            var value = Combinator.Choice(
+                multilineBasicString, basicString, multilineLiteralString, literalString, // 順番大事
+                datetime, integer, floatv, boolv, Combinator.Lazy(array), Combinator.Lazy(inlineTable)
+            );
+
+            inlineTableRef = key.Between(spaces, spaces)
+                .Pipe(
+                    Chars.Satisfy('=').Bindr(value.Between(spaces, spaces)),
+                    (k, v) => new KeyValue(k, v, null)
+                )
+                .SepEndBy0(Chars.Satisfy(',').Ignore())
+                .Between(Chars.Satisfy('{').Ignore(), spaces.SeqIgnore(Chars.Satisfy('}')))
+                .Map(x => new TomlValue(TomlItemType.InlineTable, x));
+
             var comments = comment.Between(spacesOrNewlines, spacesOrNewlines).Many0();
             var comma = Chars.Satisfy(',').Between(spacesOrNewlines, spacesOrNewlines).Ignore();
             Func<Parser<char, TomlValue>, Parser<char, TomlValue>> createArrayParser = p =>
@@ -439,19 +458,9 @@ namespace HyperTomlProcessor
                 createArrayParser(integer),
                 createArrayParser(floatv),
                 createArrayParser(boolv),
-                createArrayParser(Combinator.Lazy(array))
+                createArrayParser(Combinator.Lazy(array)),
+                createArrayParser(Combinator.Lazy(inlineTable))
             );
-
-            var key = Chars.Satisfy(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
-                .Many1().Or(basicString.Map(x => (string)x.Value));
-            var value = Combinator.Choice(
-                multilineBasicString, basicString, multilineLiteralString, literalString, // 順番大事
-                datetime, integer, floatv, boolv, array.Force()
-            );
-            var keyValue = from k in key.Between(spacesOrNewlines, spaces)
-                           from v in Chars.Satisfy('=').Bindr(value.Between(spaces, spaces))
-                           from c in newlineOrComment
-                           select (TableNode)new KeyValue(k, v, c);
 
             var tableName = key.Between(spaces, spaces).SepBy1(Chars.Satisfy('.').Ignore());
 
@@ -471,6 +480,10 @@ namespace HyperTomlProcessor
                                         from c in newlineOrComment
                                         select new TableInfo(t, c, true);
 
+            var keyValue = from k in key.Between(spacesOrNewlines, spaces)
+                           from v in Chars.Satisfy('=').Bindr(value.Between(spaces, spaces))
+                           from c in newlineOrComment
+                           select (TableNode)new KeyValue(k, v, c);
             var nodes = Combinator.Choice(keyValue, spacesOrNewlines.Bindr(comment)).Many0();
             var table = from t in Combinator.Choice(startTableLine, startArrayOfTableLine)
                         from c in nodes
@@ -503,27 +516,32 @@ namespace HyperTomlProcessor
 
         private static IEnumerable<object> ConvertContent(TomlValue value)
         {
-            if (value.Type == TomlItemType.Array)
+            switch (value.Type)
             {
-                foreach (var a in (IEnumerable<ArrayItem>)value.Value)
-                {
-                    foreach (var c in a.Before)
-                        yield return new XComment(c.Text);
+                case TomlItemType.Array:
+                    foreach (var a in (IEnumerable<ArrayItem>)value.Value)
+                    {
+                        foreach (var c in a.Before)
+                            yield return new XComment(c.Text);
 
-                    if (a.Value != null)
-                        yield return new XElement("item",
-                            new XAttribute("type", XUtils.GetJsonTypeString(a.Value.Type)),
-                            new XAttribute("toml", a.Value.Type.ToString()),
-                            ConvertContent(a.Value)
-                        );
+                        if (a.Value != null)
+                            yield return new XElement("item",
+                                new XAttribute("type", XUtils.GetJsonTypeString(a.Value.Type)),
+                                new XAttribute("toml", a.Value.Type.ToString()),
+                                ConvertContent(a.Value)
+                            );
 
-                    foreach (var c in a.After)
-                        yield return new XComment(c.Text);
-                }
-            }
-            else
-            {
-                yield return value.Value;
+                        foreach (var c in a.After)
+                            yield return new XComment(c.Text);
+                    }
+                    break;
+                case TomlItemType.InlineTable:
+                    foreach (var n in ToXNodes((IEnumerable<KeyValue>)value.Value))
+                        yield return n;
+                    break;
+                default:
+                    yield return value.Value;
+                    break;
             }
         }
 

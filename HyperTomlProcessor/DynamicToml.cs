@@ -99,6 +99,7 @@ namespace HyperTomlProcessor
                         return new XElement("item", CreateTypeAttr(type), ToXml(type, o));
                     });
                 case TomlItemType.Table:
+                case TomlItemType.InlineTable:
                     var xd = new XDocument();
                     using (var xw = xd.CreateWriter())
                     {

@@ -12,7 +12,8 @@
         Boolean,
         Datetime,
         Array,
-        Table
+        Table,
+        InlineTable
     }
 
     internal static class TomlItemTypeExtensions

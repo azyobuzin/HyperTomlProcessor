@@ -87,6 +87,7 @@ namespace HyperTomlProcessor
                 case TomlItemType.Array:
                     return "array";
                 case TomlItemType.Table:
+                case TomlItemType.InlineTable:
                     return "object";
                 default:
                     return "null";
