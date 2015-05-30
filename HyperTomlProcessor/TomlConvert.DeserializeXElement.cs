@@ -128,16 +128,6 @@ namespace HyperTomlProcessor
             return parser0.Pipe(parser1, (_, __) => Unit.Instance);
         }
 
-        private static Parser<TToken, T0> Left<TToken, T0, T1>(this Parser<TToken, T0> parser0, Parser<TToken, T1> parser1)
-        {
-            return parser0.Pipe(parser1, (x, _) => x);
-        }
-
-        private static Parser<TToken, T1> Right<TToken, T0, T1>(this Parser<TToken, T0> parser0, Parser<TToken, T1> parser1)
-        {
-            return parser0.Pipe(parser1, (_, x) => x);
-        }
-
         private static void InitializeParser()
         {
             var space = Chars.OneOf('\t', ' ').Ignore();
@@ -156,7 +146,7 @@ namespace HyperTomlProcessor
                 .Select(c => new Comment(c));
             var newlineOrComment = newlineOrEof.Select(_ => (Comment)null).Or(comment);
 
-            var escaped = Chars.Satisfy('\\').Right(Combinator.Choice(
+            var escaped = Chars.Satisfy('\\').Bindr(Combinator.Choice(
                 Chars.Satisfy('b').Select(_ => "\b"),
                 Chars.Satisfy('t').Select(_ => "\t"),
                 Chars.Satisfy('n').Select(_ => "\n"),
@@ -165,13 +155,13 @@ namespace HyperTomlProcessor
                 Chars.Sequence("\""),
                 Chars.Sequence("/"),
                 Chars.Sequence("\\"),
-                Chars.Satisfy('u').Right(Chars.Hex().Repeat(4))
-                    .Or(Chars.Satisfy('U').Right(Chars.Hex().Repeat(8)))
+                Chars.Satisfy('u').Bindr(Chars.Hex().Repeat(4))
+                    .Or(Chars.Satisfy('U').Bindr(Chars.Hex().Repeat(8)))
                     .Select(c => char.ConvertFromUtf32(Convert.ToInt32(string.Concat(c), 16)))
             ));
 
             var newlineEscape = Combinator.Choice(Chars.Sequence("\\\r\n"), Chars.Sequence("\\\r"), Chars.Sequence("\\\n"))
-                .Right(spacesOrNewlines).Select(_ => "");
+                .Bindr(spacesOrNewlines).Select(_ => "");
 
             var basicString = Chars.NoneOf('\r', '\n', '"', '\\').Select(c => c.ToString())
                 .Or(escaped).Many0().Between(Chars.Satisfy('"').Ignore(), Chars.Satisfy('"').Ignore())
@@ -198,7 +188,7 @@ namespace HyperTomlProcessor
             var multilineLiteralString = Combinator.Choice(
                     multilineLiteralStringChar.Select(c => c.ToString()),
                     Combinator.Sequence(Chars.Satisfy('\''), multilineLiteralStringChar),
-                    Chars.Sequence("''").Right(multilineLiteralStringChar).Select(c => string.Concat("''", c))
+                    Chars.Sequence("''").Bindr(multilineLiteralStringChar).Select(c => string.Concat("''", c))
                 ).Many0().Between(threeLiteralQuotes, threeLiteralQuotes)
                 .Select(c => new TomlValue(TomlItemType.MultilineLiteralString, c.Unfold().RemoveFirstNewLine()));
 
@@ -217,8 +207,8 @@ namespace HyperTomlProcessor
 
             var floatv = from s in sign
                          from i in digitsWithUnderscores
-                         from d in Chars.Satisfy('.').Right(digitsWithUnderscores)
-                         from e in Chars.OneOf('e', 'E').Right(digitsWithUnderscores)
+                         from d in Chars.Satisfy('.').Bindr(digitsWithUnderscores)
+                         from e in Chars.OneOf('e', 'E').Bindr(digitsWithUnderscores)
                              .Optional().Map(x => x.HasValue ? ("e" + x.Value) : "")
                          select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d, e));
 
@@ -258,14 +248,14 @@ namespace HyperTomlProcessor
             var comments = comment.Between(spacesOrNewlines, spacesOrNewlines).Many0();
             var comma = Chars.Satisfy(',').Between(spacesOrNewlines, spacesOrNewlines).Ignore();
             Func<Parser<char, TomlValue>, Parser<char, TomlValue>> createArrayParser = p =>
-                Chars.Satisfy('[').Right(
+                Chars.Satisfy('[').Bindr(
                     from i in
                         (from b in comments
                          from v in p.Between(spacesOrNewlines, spacesOrNewlines)
                          from a in comments
                          select new ArrayItem(v, b, a)
                         ).SepEndBy0(comma)
-                    from c in comments.Left(Chars.Satisfy(']'))
+                    from c in comments.Bindl(Chars.Satisfy(']'))
                     select new TomlValue(TomlItemType.Array, i.Concat(new[] { new ArrayItem(null, null, c) }))
                 );
             arrayRef = Combinator.Choice(
@@ -285,7 +275,7 @@ namespace HyperTomlProcessor
                 datetime, integer, floatv, boolv, array.Force()
             );
             var keyValue = from k in key.Between(spacesOrNewlines, spaces)
-                           from v in Chars.Satisfy('=').Right(value.Between(spaces, spaces))
+                           from v in Chars.Satisfy('=').Bindr(value.Between(spaces, spaces))
                            from c in newlineOrComment
                            select (TableNode)new KeyValue(k, v, c);
 
@@ -307,13 +297,13 @@ namespace HyperTomlProcessor
                                         from c in newlineOrComment
                                         select new TableInfo(t, c, true);
 
-            var nodes = Combinator.Choice(keyValue, spacesOrNewlines.Right(comment)).Many0();
+            var nodes = Combinator.Choice(keyValue, spacesOrNewlines.Bindr(comment)).Many0();
             var table = from t in Combinator.Choice(startTableLine, startArrayOfTableLine)
                         from c in nodes
                         select new Table(t, c);
 
             tomlParser = from r in nodes
-                         from t in table.Many0().Left(spacesOrNewlines)
+                         from t in table.Many0().Bindl(spacesOrNewlines)
                          select new ParseResult(r, t);
         }
 
