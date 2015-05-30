@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
@@ -9,14 +8,14 @@ using Parseq.Combinators;
 
 namespace HyperTomlProcessor
 {
-    partial class TomlConvert
+    internal static class TomlParser
     {
         private static string Unfold(this IEnumerable<IEnumerable<char>> source)
         {
             return string.Concat(source.SelectMany(_ => _));
         }
 
-        private class TableInfo
+        internal class TableInfo
         {
             public readonly string[] Name;
             public readonly Comment Comment;
@@ -30,9 +29,9 @@ namespace HyperTomlProcessor
             }
         }
 
-        private abstract class TableNode { }
+        internal abstract class TableNode { }
 
-        private class Comment : TableNode
+        internal class Comment : TableNode
         {
             public readonly string Text;
 
@@ -42,7 +41,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private class TomlValue
+        internal class TomlValue
         {
             public readonly TomlItemType Type;
             public readonly object Value;
@@ -54,7 +53,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private class ArrayItem
+        internal class ArrayItem
         {
             public readonly TomlValue Value;
             public readonly IEnumerable<Comment> Before;
@@ -68,7 +67,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private class KeyValue : TableNode
+        internal class KeyValue : TableNode
         {
             public readonly string Key;
             public readonly TomlValue Value;
@@ -82,7 +81,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private class Table
+        internal class Table
         {
             public readonly TableInfo Info;
             public readonly IEnumerable<TableNode> Content;
@@ -94,7 +93,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private class ParseResult
+        internal class ParseResult
         {
             public readonly IEnumerable<TableNode> RootNodes;
             public readonly IEnumerable<Table> Tables;
@@ -231,7 +230,7 @@ namespace HyperTomlProcessor
             var boolv = Chars.Sequence("true").Select(_ => true)
                 .Or(Chars.Sequence("false").Select(_ => false))
                 .Select(b => new TomlValue(TomlItemType.Boolean, b));
-            
+
             var hyphen = Chars.Satisfy('-');
             var colon = Chars.Satisfy(':');
             var twoDigits = digit.Repeat(2);
@@ -482,7 +481,7 @@ namespace HyperTomlProcessor
                         select new ParseResult(r, t);
         }
 
-        private static Parser<char, ParseResult> V03Parser
+        internal static Parser<char, ParseResult> V03Parser
         {
             get
             {
@@ -492,7 +491,7 @@ namespace HyperTomlProcessor
             }
         }
 
-        private static Parser<char, ParseResult> V04Parser
+        internal static Parser<char, ParseResult> V04Parser
         {
             get
             {
@@ -599,9 +598,9 @@ namespace HyperTomlProcessor
                 stream.Current.Case(() => "", x => x.Item1.Convert((line, col) => string.Format("Line:{0} Column:{1}", line, col)))));
         }
 
-        internal static XElement DeserializeXElement(ITokenStream<char> stream)
+        internal static XElement DeserializeXElement(this Parser<char, ParseResult> parser, ITokenStream<char> stream)
         {
-            var result = V04Parser(stream).Case(
+            var result = parser(stream).Case(
                 (s, err) =>
                 {
                     ThrowFormatException("Parse failed: " + err, s);
@@ -652,36 +651,6 @@ namespace HyperTomlProcessor
             }
 
             return root.ToXElement("root");
-        }
-
-        /// <summary>
-        /// Deserializes the TOML to an <see cref="XElement"/>.
-        /// </summary>
-        /// <param name="toml">The TOML string to deserialize.</param>
-        /// <returns>The deserialized <see cref="XElement"/>.</returns>
-        public static XElement DeserializeXElement(IEnumerable<char> toml)
-        {
-            return DeserializeXElement(toml.AsStream());
-        }
-
-        /// <summary>
-        /// Deserializes the TOML to an <see cref="XElement"/>.
-        /// </summary>
-        /// <param name="reader">The <see cref="TextReader"/> that contains the TOML to deserialize.</param>
-        /// <returns>The deserialized <see cref="XElement"/>.</returns>
-        public static XElement DeserializeXElement(TextReader reader)
-        {
-            return DeserializeXElement(reader.AsStream());
-        }
-
-        /// <summary>
-        /// Deserializes the TOML to an <see cref="XElement"/>.
-        /// </summary>
-        /// <param name="stream">The stream that contains the TOML to deserialize.</param>
-        /// <returns>The deserialized <see cref="XElement"/>.</returns>
-        public static XElement DeserializeXElement(Stream stream)
-        {
-            return DeserializeXElement(new StreamReader(stream));
         }
     }
 }

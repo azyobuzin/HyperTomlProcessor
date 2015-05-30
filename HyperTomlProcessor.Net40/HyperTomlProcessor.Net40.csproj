@@ -55,14 +55,14 @@
     <Compile Include="..\HyperTomlProcessor\ReflectionUtils.cs">
       <Link>ReflectionUtils.cs</Link>
     </Compile>
-    <Compile Include="..\HyperTomlProcessor\TomlConvert.cs">
-      <Link>TomlConvert.cs</Link>
-    </Compile>
-    <Compile Include="..\HyperTomlProcessor\TomlConvert.DeserializeXElement.cs">
-      <Link>TomlConvert.DeserializeXElement.cs</Link>
+    <Compile Include="..\HyperTomlProcessor\Toml.cs">
+      <Link>Toml.cs</Link>
     </Compile>
     <Compile Include="..\HyperTomlProcessor\TomlItemType.cs">
       <Link>TomlItemType.cs</Link>
+    </Compile>
+    <Compile Include="..\HyperTomlProcessor\TomlParser.cs">
+      <Link>TomlParser.cs</Link>
     </Compile>
     <Compile Include="..\HyperTomlProcessor\XUtils.cs">
       <Link>XUtils.cs</Link>

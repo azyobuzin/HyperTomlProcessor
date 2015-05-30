@@ -150,9 +150,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="reader">A <see cref="TextReader" /> that will be read for the TOML content.</param>
         /// <returns>A <see cref="DynamicToml"/> that contains the TOML that was read from the specified <see cref="TextReader"/>.</returns>
-        public static dynamic Parse(TextReader reader)
+        public static dynamic Parse(Toml parser, TextReader reader)
         {
-            return new DynamicToml(TomlConvert.DeserializeXElement(reader));
+            return new DynamicToml(parser.DeserializeXElement(reader));
         }
 
         /// <summary>
@@ -160,9 +160,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="stream">The stream that contains the TOML data.</param>
         /// <returns>An <see cref="DynamicToml"/> object used to read the data that is contained in the stream.</returns>
-        public static dynamic Parse(Stream stream)
+        public static dynamic Parse(Toml parser, Stream stream)
         {
-            return Parse(new StreamReader(stream));
+            return Parse(parser, new StreamReader(stream));
         }
 
         /// <summary>
@@ -170,9 +170,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="toml">A string that contains TOML.</param>
         /// <returns>A <see cref="DynamicToml"/> populated from the string that contains TOML.</returns>
-        public static dynamic Parse(IEnumerable<char> toml)
+        public static dynamic Parse(Toml parser, IEnumerable<char> toml)
         {
-            return new DynamicToml(TomlConvert.DeserializeXElement(toml));
+            return new DynamicToml(parser.DeserializeXElement(toml));
         }
 
         private DynamicToml(XElement elm)

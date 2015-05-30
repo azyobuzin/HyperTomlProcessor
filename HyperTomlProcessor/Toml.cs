@@ -10,8 +10,76 @@ namespace HyperTomlProcessor
     /// <summary>
     /// Provides methods for converting between <see cref="XElement"/> and TOML.
     /// </summary>
-    public static partial class TomlConvert
+    public class Toml
     {
+        //TODO: バージョン別書き出し
+        internal Toml(Parser<char, TomlParser.ParseResult> parser)
+        {
+            this.parser = parser;
+        }
+
+        private Parser<char, TomlParser.ParseResult> parser;
+
+        private static Toml v03;
+
+        /// <summary>
+        /// Gets the <see cref="Toml"/> instance for TOML v0.3.0.
+        /// </summary>
+        public static Toml V03
+        {
+            get
+            {
+                if (v03 == null)
+                    v03 = new Toml(TomlParser.V03Parser);
+                return v03;
+            }
+        }
+
+        private static Toml v04;
+
+        /// <summary>
+        /// Gets the <see cref="Toml"/> instance for TOML v0.4.0.
+        /// </summary>
+        public static Toml V04
+        {
+            get
+            {
+                if (v04 == null)
+                    v04 = new Toml(TomlParser.V04Parser);
+                return v04;
+            }
+        }
+
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="toml">The TOML string to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
+        public XElement DeserializeXElement(IEnumerable<char> toml)
+        {
+            return this.parser.DeserializeXElement(toml.AsStream());
+        }
+
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> that contains the TOML to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
+        public XElement DeserializeXElement(TextReader reader)
+        {
+            return this.parser.DeserializeXElement(reader.AsStream());
+        }
+
+        /// <summary>
+        /// Deserializes the TOML to an <see cref="XElement"/>.
+        /// </summary>
+        /// <param name="stream">The stream that contains the TOML to deserialize.</param>
+        /// <returns>The deserialized <see cref="XElement"/>.</returns>
+        public XElement DeserializeXElement(Stream stream)
+        {
+            return this.DeserializeXElement(new StreamReader(stream));
+        }
+
         /// <summary>
         /// Serializes the <see cref="XElement"/> to TOML.
         /// </summary>
@@ -150,9 +218,9 @@ namespace HyperTomlProcessor
             }
         }
 
-        private static T DeserializeObject<T>(ITokenStream<char> stream, Func<DataContractJsonSerializer> factory = null)
+        private T DeserializeObject<T>(ITokenStream<char> stream, Func<DataContractJsonSerializer> factory = null)
         {
-            return DeserializeObject<T>(DeserializeXElement(stream), factory);
+            return DeserializeObject<T>(this.parser.DeserializeXElement(stream), factory);
         }
 
         /// <summary>
@@ -165,9 +233,9 @@ namespace HyperTomlProcessor
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(TextReader reader, Func<DataContractJsonSerializer> factory = null)
+        public T DeserializeObject<T>(TextReader reader, Func<DataContractJsonSerializer> factory = null)
         {
-            return DeserializeObject<T>(reader.AsStream(), factory);
+            return this.DeserializeObject<T>(reader.AsStream(), factory);
         }
 
         /// <summary>
@@ -180,9 +248,9 @@ namespace HyperTomlProcessor
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(Stream stream, Func<DataContractJsonSerializer> factory = null)
+        public T DeserializeObject<T>(Stream stream, Func<DataContractJsonSerializer> factory = null)
         {
-            return DeserializeObject<T>(new StreamReader(stream), factory);
+            return this.DeserializeObject<T>(new StreamReader(stream), factory);
         }
 
         /// <summary>
@@ -195,9 +263,9 @@ namespace HyperTomlProcessor
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(IEnumerable<char> toml, Func<DataContractJsonSerializer> factory = null)
+        public T DeserializeObject<T>(IEnumerable<char> toml, Func<DataContractJsonSerializer> factory = null)
         {
-            return DeserializeObject<T>(toml.AsStream(), factory);
+            return this.DeserializeObject<T>(toml.AsStream(), factory);
         }
 
 #if NET45
@@ -220,9 +288,9 @@ namespace HyperTomlProcessor
         /// <param name="reader">The <see cref="TextReader"/> that contains the TOML to deserialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(TextReader reader, DataContractJsonSerializerSettings settings)
+        public T DeserializeObject<T>(TextReader reader, DataContractJsonSerializerSettings settings)
         {
-            return DeserializeObject<T>(reader, MakeFactory(typeof(T), settings));
+            return this.DeserializeObject<T>(reader, MakeFactory(typeof(T), settings));
         }
 
         /// <summary>
@@ -232,9 +300,9 @@ namespace HyperTomlProcessor
         /// <param name="stream">The stream that contains the TOML to deserialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(Stream stream, DataContractJsonSerializerSettings settings)
+        public T DeserializeObject<T>(Stream stream, DataContractJsonSerializerSettings settings)
         {
-            return DeserializeObject<T>(stream, MakeFactory(typeof(T), settings));
+            return this.DeserializeObject<T>(stream, MakeFactory(typeof(T), settings));
         }
 
         /// <summary>
@@ -244,9 +312,9 @@ namespace HyperTomlProcessor
         /// <param name="toml">The TOML string to deserialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
         /// <returns>The deserialized object.</returns>
-        public static T DeserializeObject<T>(IEnumerable<char> toml, DataContractJsonSerializerSettings settings)
+        public T DeserializeObject<T>(IEnumerable<char> toml, DataContractJsonSerializerSettings settings)
         {
-            return DeserializeObject<T>(toml, MakeFactory(typeof(T), settings));
+            return this.DeserializeObject<T>(toml, MakeFactory(typeof(T), settings));
         }
 #endif
     }
