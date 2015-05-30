@@ -121,14 +121,189 @@ namespace HyperTomlProcessor
             return s;
         }
 
-        private static Parser<char, ParseResult> tomlParser;
+        private static Parser<char, ParseResult> v03Parser;
+        private static Parser<char, ParseResult> v04Parser;
 
         private static Parser<TToken, Unit> SeqIgnore<TToken, T0, T1>(this Parser<TToken, T0> parser0, Parser<TToken, T1> parser1)
         {
             return parser0.Pipe(parser1, (_, __) => Unit.Instance);
         }
 
-        private static void InitializeParser()
+        private static void InitializeV03Parser()
+        {
+            var space = Chars.OneOf('\t', ' ').Ignore();
+            var spaces = space.Many0().Ignore();
+            var spacesOrNewlines = Chars.OneOf('\t', ' ', '\r', '\n').Many0().Ignore();
+            var newline = Combinator.Choice(
+                Chars.Sequence("\r\n"),
+                Chars.Sequence("\r"),
+                Chars.Sequence("\n")
+            ).Ignore();
+            var newlineOrEof = newline.Or(Chars.EndOfInput()).Ignore();
+            var notNewlineChar = Chars.NoneOf('\r', '\n');
+
+            var comment = notNewlineChar.Many0()
+                .Between(Chars.Satisfy('#').Ignore(), newlineOrEof)
+                .Select(c => new Comment(c));
+
+            var tableNameChar = Chars.NoneOf('\t', ' ', '.', '\r', '\n', ']'); // should add '#'?
+            var newlineOrComment = newlineOrEof.Select(_ => (Comment)null).Or(comment);
+
+            var tableName = tableNameChar.Many1().SepBy1(Chars.Satisfy('.').Ignore())
+                .Between(
+                    spacesOrNewlines.SeqIgnore(Chars.Satisfy('[')),
+                    Chars.Satisfy(']').SeqIgnore(spaces)
+                );
+            var tableNameLine = from t in tableName
+                                from c in newlineOrComment
+                                select new TableInfo(t, c, false);
+
+            var arrayOfTableName = tableNameChar.Many1().SepBy1(Chars.Satisfy('.').Ignore())
+                .Between(
+                    spacesOrNewlines.SeqIgnore(Chars.Sequence("[[")),
+                    Chars.Sequence("]]").SeqIgnore(spaces)
+                );
+            var arrayOfTableNameLine = from t in arrayOfTableName
+                                       from c in newlineOrComment
+                                       select new TableInfo(t, c, true);
+
+            var escaped = Chars.Satisfy('\\').Bindr(Combinator.Choice(
+                Chars.Satisfy('b').Select(_ => "\b"),
+                Chars.Satisfy('t').Select(_ => "\t"),
+                Chars.Satisfy('n').Select(_ => "\n"),
+                Chars.Satisfy('f').Select(_ => "\f"),
+                Chars.Satisfy('r').Select(_ => "\r"),
+                Chars.Sequence("\""),
+                Chars.Sequence("/"),
+                Chars.Sequence("\\"),
+                Chars.Satisfy('u').Bindr(Chars.Hex().Repeat(4))
+                    .Or(Chars.Satisfy('U').Bindr(Chars.Hex().Repeat(8)))
+                    .Select(c => char.ConvertFromUtf32(Convert.ToInt32(string.Concat(c), 16)))
+            ));
+
+            var newlineEscape = Combinator.Choice(Chars.Sequence("\\\r\n"), Chars.Sequence("\\\r"), Chars.Sequence("\\\n"))
+                .Bindr(spacesOrNewlines).Select(_ => "");
+
+            var basicString = Chars.NoneOf('\r', '\n', '"', '\\').Select(c => c.ToString())
+                .Or(escaped).Many0().Between(Chars.Satisfy('"').Ignore(), Chars.Satisfy('"').Ignore())
+                .Select(c => new TomlValue(TomlItemType.BasicString, c.Unfold()));
+
+            var threeQuotes = Chars.Sequence("\"\"\"").Ignore();
+            var multilineBasicStringChar = Combinator.Choice(
+                Chars.NoneOf('\\', '"').Select(c => c.ToString()),
+                escaped, newlineEscape
+            );
+            var multilineBasicString = Combinator.Choice(
+                    multilineBasicStringChar,
+                    Combinator.Sequence(Chars.Sequence('"'), multilineBasicStringChar).Select(Unfold),
+                    Combinator.Sequence(Chars.Sequence("\"\""), multilineBasicStringChar).Select(Unfold)
+                ).Many0().Between(threeQuotes, threeQuotes)
+                .Select(c => new TomlValue(TomlItemType.MultilineBasicString, c.Unfold().RemoveFirstNewLine()));
+
+            var literalString = Chars.NoneOf('\r', '\n', '\'').Many0()
+                .Between(Chars.Satisfy('\'').Ignore(), Chars.Satisfy('\'').Ignore())
+                .Select(c => new TomlValue(TomlItemType.LiteralString, string.Concat(c)));
+
+            var threeLiteralQuotes = Chars.Sequence("'''").Ignore();
+            var multilineLiteralStringChar = Chars.NoneOf('\'');
+            var multilineLiteralString = Combinator.Choice(
+                    multilineLiteralStringChar.Select(c => c.ToString()),
+                    Combinator.Sequence(Chars.Satisfy('\''), multilineLiteralStringChar),
+                    Chars.Sequence("''").Bindr(multilineLiteralStringChar).Select(c => string.Concat("''", c))
+                ).Many0().Between(threeLiteralQuotes, threeLiteralQuotes)
+                .Select(c => new TomlValue(TomlItemType.MultilineLiteralString, c.Unfold().RemoveFirstNewLine()));
+
+            var sign = Chars.OneOf('+', '-').Optional().Select(o => o.Case(() => "", c => c.ToString()));
+            var digit = Chars.Satisfy(c => c >= '0' && c <= '9');
+            var digits = digit.Many1().Map(x => string.Concat(x));
+
+            var integer = from s in sign
+                          from i in digits
+                          select new TomlValue(TomlItemType.Integer, string.Concat(s, i));
+
+            var floatv = from s in sign
+                         from i in digits
+                         from d in Chars.Satisfy('.').Bindr(digits)
+                         from e in Chars.OneOf('e', 'E').Bindr(digits)
+                             .Optional().Map(x => x.HasValue ? ("e" + x.Value) : "")
+                         select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d, e));
+
+            var boolv = Chars.Sequence("true").Select(_ => true)
+                .Or(Chars.Sequence("false").Select(_ => false))
+                .Select(b => new TomlValue(TomlItemType.Boolean, b));
+            
+            var hyphen = Chars.Satisfy('-');
+            var colon = Chars.Satisfy(':');
+            var twoDigits = digit.Repeat(2);
+            var datetime = digit.Repeat(4) // year
+                .Append(hyphen).Append(twoDigits) // month
+                .Append(hyphen).Append(twoDigits) // day
+                .Append(
+                    Chars.Sequence("T").Append(twoDigits) // hour
+                        .Append(colon).Append(twoDigits) // minute
+                        .Append(colon).Append(twoDigits) // second
+                        .Append(
+                            Chars.Sequence(".").Append(digits).Optional()
+                        )
+                        .Append(
+                            Chars.Sequence("Z")
+                                .Or(
+                                    Chars.Sequence("+").Or(Chars.Sequence("-"))
+                                        .Append(twoDigits)
+                                        .Append(Chars.Satisfy(':').Optional().Map(x => ':'))
+                                        .Append(twoDigits)
+                                )
+                                .Optional()
+                        )
+                        .Optional()
+                )
+                .Map(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
+
+            Parser<char, TomlValue> arrayRef = null;
+            var array = Delayed.Return(() => arrayRef);
+            var comments = comment.Between(spacesOrNewlines, spacesOrNewlines).Many0();
+            var comma = Chars.Satisfy(',').Between(spacesOrNewlines, spacesOrNewlines).Ignore();
+            Func<Parser<char, TomlValue>, Parser<char, TomlValue>> createArrayParser = p =>
+                Chars.Satisfy('[').Bindr(
+                    from i in
+                        (from b in comments
+                         from v in p.Between(spacesOrNewlines, spacesOrNewlines)
+                         from a in comments
+                         select new ArrayItem(v, b, a)
+                        ).SepEndBy0(comma)
+                    from c in comments.Bindl(Chars.Satisfy(']'))
+                    select new TomlValue(TomlItemType.Array, i.Concat(new[] { new ArrayItem(null, null, c) }))
+                );
+            arrayRef = Combinator.Choice(
+                createArrayParser(Combinator.Choice(
+                    multilineBasicString, basicString, multilineLiteralString, literalString)), // 順番大事
+                createArrayParser(datetime),
+                createArrayParser(integer),
+                createArrayParser(floatv),
+                createArrayParser(boolv),
+                createArrayParser(Combinator.Lazy(array))
+            );
+
+            var value = Combinator.Choice(
+                multilineBasicString, basicString, multilineLiteralString, literalString, // 順番大事
+                datetime, integer, floatv, boolv, array.Force()
+            );
+            var keyValue = from k in Chars.NoneOf('\t', ' ', '\r', '\n', '=', '#').Many1().Between(spacesOrNewlines, spaces)
+                           from v in Chars.Satisfy('=').Bindr(value.Between(spaces, spaces))
+                           from c in newlineOrComment
+                           select (TableNode)new KeyValue(k, v, c);
+
+            var nodes = Combinator.Choice(keyValue, spacesOrNewlines.Bindr(comment)).Many0();
+            var table = from t in Combinator.Choice(tableNameLine, arrayOfTableNameLine)
+                        from c in nodes
+                        select new Table(t, c);
+
+            v03Parser = from r in nodes
+                        from t in table.Many0().Bindl(spacesOrNewlines)
+                        select new ParseResult(r, t);
+        }
+
+        private static void InitializeV04Parser()
         {
             var space = Chars.OneOf('\t', ' ').Ignore();
             var spaces = space.Many0().Ignore();
@@ -153,7 +328,7 @@ namespace HyperTomlProcessor
                 Chars.Satisfy('f').Select(_ => "\f"),
                 Chars.Satisfy('r').Select(_ => "\r"),
                 Chars.Sequence("\""),
-                Chars.Sequence("/"),
+                //Chars.Sequence("/"),
                 Chars.Sequence("\\"),
                 Chars.Satisfy('u').Bindr(Chars.Hex().Repeat(4))
                     .Or(Chars.Satisfy('U').Bindr(Chars.Hex().Repeat(8)))
@@ -302,18 +477,28 @@ namespace HyperTomlProcessor
                         from c in nodes
                         select new Table(t, c);
 
-            tomlParser = from r in nodes
-                         from t in table.Many0().Bindl(spacesOrNewlines)
-                         select new ParseResult(r, t);
+            v04Parser = from r in nodes
+                        from t in table.Many0().Bindl(spacesOrNewlines)
+                        select new ParseResult(r, t);
         }
 
-        private static Parser<char, ParseResult> TomlParser
+        private static Parser<char, ParseResult> V03Parser
         {
             get
             {
-                if (tomlParser == null)
-                    InitializeParser();
-                return tomlParser;
+                if (v03Parser == null)
+                    InitializeV03Parser();
+                return v03Parser;
+            }
+        }
+
+        private static Parser<char, ParseResult> V04Parser
+        {
+            get
+            {
+                if (v04Parser == null)
+                    InitializeV04Parser();
+                return v04Parser;
             }
         }
 
@@ -416,7 +601,7 @@ namespace HyperTomlProcessor
 
         internal static XElement DeserializeXElement(ITokenStream<char> stream)
         {
-            var result = TomlParser(stream).Case(
+            var result = V04Parser(stream).Case(
                 (s, err) =>
                 {
                     ThrowFormatException("Parse failed: " + err, s);
