@@ -34,7 +34,7 @@
     <RootNamespaceContainer>False</RootNamespaceContainer>
     <PresentationStyle>VS2013</PresentationStyle>
     <Preliminary>False</Preliminary>
-    <NamingMethod>Guid</NamingMethod>
+    <NamingMethod>HashedMemberName</NamingMethod>
     <HelpTitle>HyperTomlProcessor Class Library</HelpTitle>
     <ContentPlacement>AboveNamespaces</ContentPlacement>
     <ComponentConfigurations />
