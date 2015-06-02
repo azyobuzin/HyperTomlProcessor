@@ -369,10 +369,6 @@ namespace HyperTomlProcessor
             var sign = Chars.OneOf('+', '-').Optional().Select(o => o.Case(() => "", c => c.ToString()));
             var digit = Chars.Satisfy(c => c >= '0' && c <= '9');
             var digits = digit.Many1();
-            //var digitsWithUnderscores = digits.Pipe(
-            //    Chars.Satisfy('_').Right(digits).Many0(),
-            //    (first, rest) => string.Concat(first) + string.Concat(rest.Unfold())
-            //);
             var digitsWithUnderscores = digits.SepBy1(Chars.Satisfy('_').Ignore()).Map(Unfold);
 
             var integer = from s in sign

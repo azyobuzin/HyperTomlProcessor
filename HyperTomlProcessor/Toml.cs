@@ -13,12 +13,20 @@ namespace HyperTomlProcessor
     public class Toml
     {
         //TODO: バージョン別書き出し
-        internal Toml(Parser<char, TomlParser.ParseResult> parser)
+        internal Toml(TomlVersion version, Parser<char, TomlParser.ParseResult> parser)
         {
+            this.Version = version;
             this.parser = parser;
+            this.writer = new TomlWriter(version);
         }
 
+        /// <summary>
+        /// Gets the TOML version.
+        /// </summary>
+        public TomlVersion Version { get; private set; }
+
         private Parser<char, TomlParser.ParseResult> parser;
+        private TomlWriter writer;
 
         private static Toml v03;
 
@@ -30,7 +38,7 @@ namespace HyperTomlProcessor
             get
             {
                 if (v03 == null)
-                    v03 = new Toml(TomlParser.V03Parser);
+                    v03 = new Toml(TomlVersion.V03, TomlParser.V03Parser);
                 return v03;
             }
         }
@@ -45,7 +53,7 @@ namespace HyperTomlProcessor
             get
             {
                 if (v04 == null)
-                    v04 = new Toml(TomlParser.V04Parser);
+                    v04 = new Toml(TomlVersion.V04, TomlParser.V04Parser);
                 return v04;
             }
         }
@@ -85,9 +93,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="writer">A <see cref="TextWriter"/> to write the TOML content to.</param>
         /// <param name="toml">The <see cref="XElement"/> to convert to TOML.</param>
-        public static void SerializeXElement(TextWriter writer, XElement toml)
+        public void SerializeXElement(TextWriter writer, XElement toml)
         {
-            XUtils.WriteTo(toml, writer);
+            this.writer.WriteTo(toml, writer);
         }
 
         /// <summary>
@@ -95,9 +103,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="stream">A stream to write the TOML content to.</param>
         /// <param name="toml">The <see cref="XElement"/> to convert to TOML.</param>
-        public static void SerializeXElement(Stream stream, XElement toml)
+        public void SerializeXElement(Stream stream, XElement toml)
         {
-            SerializeXElement(new StreamWriter(stream), toml);
+            this.SerializeXElement(new StreamWriter(stream), toml);
         }
 
         /// <summary>
@@ -105,9 +113,9 @@ namespace HyperTomlProcessor
         /// </summary>
         /// <param name="toml">The <see cref="XElement"/> to convert to TOML.</param>
         /// <returns>A TOML string.</returns>
-        public static string SerializeXElement(XElement toml)
+        public string SerializeXElement(XElement toml)
         {
-            return XUtils.GetStreamString(w => SerializeXElement(w, toml));
+            return XUtils.GetStreamString(w => this.SerializeXElement(w, toml));
         }
 
         // 引数の順番は DataContractJsonSerializer.WriteObject より
@@ -120,7 +128,7 @@ namespace HyperTomlProcessor
         /// The function to make a <see cref="DataContractJsonSerializer"/>.
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
-        public static void SerializeObject(TextWriter writer, object obj, Func<DataContractJsonSerializer> factory = null)
+        public void SerializeObject(TextWriter writer, object obj, Func<DataContractJsonSerializer> factory = null)
         {
             var xd = new XDocument();
             using (var xw = xd.CreateWriter())
@@ -128,7 +136,7 @@ namespace HyperTomlProcessor
                 var s = factory != null ? factory() : new DataContractJsonSerializer(obj.GetType());
                 s.WriteObject(xw, obj);
             }
-            SerializeXElement(writer, xd.Root);
+            this.SerializeXElement(writer, xd.Root);
         }
 
         /// <summary>
@@ -140,9 +148,9 @@ namespace HyperTomlProcessor
         /// The function to make a <see cref="DataContractJsonSerializer"/>.
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
-        public static void SerializeObject(Stream stream, object obj, Func<DataContractJsonSerializer> factory = null)
+        public void SerializeObject(Stream stream, object obj, Func<DataContractJsonSerializer> factory = null)
         {
-            SerializeObject(new StreamWriter(stream), obj, factory);
+            this.SerializeObject(new StreamWriter(stream), obj, factory);
         }
 
         /// <summary>
@@ -154,9 +162,9 @@ namespace HyperTomlProcessor
         /// if null, it will make a <see cref="DataContractJsonSerializer"/> with default settings.
         /// </param>
         /// <returns>A TOML string.</returns>
-        public static string SerializeObject(object obj, Func<DataContractJsonSerializer> factory = null)
+        public string SerializeObject(object obj, Func<DataContractJsonSerializer> factory = null)
         {
-            return XUtils.GetStreamString(w => SerializeObject(w, obj, factory));
+            return XUtils.GetStreamString(w => this.SerializeObject(w, obj, factory));
         }
 
 #if NET45
@@ -171,9 +179,9 @@ namespace HyperTomlProcessor
         /// <param name="writer">A <see cref="TextWriter"/> to write the TOML content to.</param>
         /// <param name="obj">The object to serialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
-        public static void SerializeObject(TextWriter writer, object obj, DataContractJsonSerializerSettings settings)
+        public void SerializeObject(TextWriter writer, object obj, DataContractJsonSerializerSettings settings)
         {
-            SerializeObject(writer, obj, MakeFactory(obj.GetType(), settings));
+            this.SerializeObject(writer, obj, MakeFactory(obj.GetType(), settings));
         }
 
         /// <summary>
@@ -182,9 +190,9 @@ namespace HyperTomlProcessor
         /// <param name="stream">A stream to write the TOML content to.</param>
         /// <param name="obj">The object to serialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
-        public static void SerializeObject(Stream stream, object obj, DataContractJsonSerializerSettings settings)
+        public void SerializeObject(Stream stream, object obj, DataContractJsonSerializerSettings settings)
         {
-            SerializeObject(stream, obj, MakeFactory(obj.GetType(), settings));
+            this.SerializeObject(stream, obj, MakeFactory(obj.GetType(), settings));
         }
 
         /// <summary>
@@ -193,9 +201,9 @@ namespace HyperTomlProcessor
         /// <param name="obj">The object to serialize.</param>
         /// <param name="settings">A <see cref="DataContractJsonSerializerSettings"/> to make the <see cref="DataContractJsonSerializer"/>.</param>
         /// <returns>A TOML string.</returns>
-        public static string SerializeObject(object obj, DataContractJsonSerializerSettings settings)
+        public string SerializeObject(object obj, DataContractJsonSerializerSettings settings)
         {
-            return SerializeObject(obj, MakeFactory(obj.GetType(), settings));
+            return this.SerializeObject(obj, MakeFactory(obj.GetType(), settings));
         }
 #endif
 

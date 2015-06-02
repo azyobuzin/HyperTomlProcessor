@@ -149,6 +149,7 @@ namespace HyperTomlProcessor
         /// <summary>
         /// Loads a <see cref="DynamicToml"/> from a <see cref="TextReader"/>.
         /// </summary>
+        /// <param name="parser">A <see cref="Toml"/> instance to parse with.</param>
         /// <param name="reader">A <see cref="TextReader" /> that will be read for the TOML content.</param>
         /// <returns>A <see cref="DynamicToml"/> that contains the TOML that was read from the specified <see cref="TextReader"/>.</returns>
         public static dynamic Parse(Toml parser, TextReader reader)
@@ -159,6 +160,7 @@ namespace HyperTomlProcessor
         /// <summary>
         /// Creates a new <see cref="DynamicToml"/> instance by using the specified stream.
         /// </summary>
+        /// <param name="parser">A <see cref="Toml"/> instance to parse with.</param>
         /// <param name="stream">The stream that contains the TOML data.</param>
         /// <returns>An <see cref="DynamicToml"/> object used to read the data that is contained in the stream.</returns>
         public static dynamic Parse(Toml parser, Stream stream)
@@ -169,6 +171,7 @@ namespace HyperTomlProcessor
         /// <summary>
         /// Load an <see cref="DynamicToml"/> from a string that contains XML.
         /// </summary>
+        /// <param name="parser">A <see cref="Toml"/> instance to parse with.</param>
         /// <param name="toml">A string that contains TOML.</param>
         /// <returns>A <see cref="DynamicToml"/> populated from the string that contains TOML.</returns>
         public static dynamic Parse(Toml parser, IEnumerable<char> toml)
@@ -573,28 +576,30 @@ namespace HyperTomlProcessor
         /// <summary>
         /// Writes the content of <see cref="DynamicToml"/> to the specified <see cref="TextWriter"/>.
         /// </summary>
+        /// <param name="toml">A <see cref="Toml"/> instance to write with.</param>
         /// <param name="writer">The <see cref="TextWriter"/> to write this <see cref="DynamicToml"/> to.</param>
-        public void WriteTo(TextWriter writer)
+        public void WriteTo(Toml toml, TextWriter writer)
         {
-            XUtils.WriteTo(this.element, writer);
+            toml.SerializeXElement(writer, this.element);
         }
 
         /// <summary>
         /// Writes the content of <see cref="DynamicToml"/> to the specified stream.
         /// </summary>
+        /// <param name="toml">A <see cref="Toml"/> instance to write with.</param>
         /// <param name="stream">The stream to write this <see cref="DynamicToml"/> to.</param>
-        public void WriteTo(Stream stream)
+        public void WriteTo(Toml toml, Stream stream)
         {
-            WriteTo(new StreamWriter(stream));
+            this.WriteTo(toml, new StreamWriter(stream));
         }
 
         /// <summary>
         /// Returns the TOML for this element.
         /// </summary>
-        /// <returns>A <see cref="String"/> containing the TOML.</returns>
+        /// <returns>A <see cref="string"/> containing the TOML.</returns>
         public override string ToString()
         {
-            return XUtils.GetStreamString(this.WriteTo);
+            return XUtils.GetStreamString(w => this.WriteTo(Toml.V04, w));
         }
     }
 }

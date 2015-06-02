@@ -64,6 +64,12 @@
     <Compile Include="..\HyperTomlProcessor\TomlParser.cs">
       <Link>TomlParser.cs</Link>
     </Compile>
+    <Compile Include="..\HyperTomlProcessor\TomlVersion.cs">
+      <Link>TomlVersion.cs</Link>
+    </Compile>
+    <Compile Include="..\HyperTomlProcessor\TomlWriter.cs">
+      <Link>TomlWriter.cs</Link>
+    </Compile>
     <Compile Include="..\HyperTomlProcessor\XUtils.cs">
       <Link>XUtils.cs</Link>
     </Compile>

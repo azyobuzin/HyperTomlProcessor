@@ -52,6 +52,8 @@
     <Compile Include="TomlParser.cs" />
     <Compile Include="DynamicToml.cs" />
     <Compile Include="TomlItemType.cs" />
+    <Compile Include="TomlVersion.cs" />
+    <Compile Include="TomlWriter.cs" />
     <Compile Include="XUtils.cs" />
     <Compile Include="ReflectionUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
