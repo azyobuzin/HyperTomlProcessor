@@ -1,80 +1,86 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <HelpTOC>
 
-  <HelpTOCNode Id="3cc96a02-b8e9-4e2c-abbc-ff05ebd2f581" Title="HyperTomlProcessor" Url="html/77dc5bfe-2b27-a82d-b305-683923f4b451.htm">
-    <HelpTOCNode Id="3d802b94-c15b-4390-a983-d8372116f275" Title="DynamicToml Class" Url="html/59f27c6a-7a3b-f1d6-7cbe-3a2d32af086b.htm">
-      <HelpTOCNode Id="6c3a83c2-c1a9-4c29-8ef5-30720d8523d2" Title="DynamicToml Methods" Url="html/1e7879cc-66f4-ff03-0163-f221aa00601d.htm">
-        <HelpTOCNode Id="2cc29724-9161-4f16-b124-e03e63a40e60" Title="Add Method " Url="html/fbf87df8-50a0-c93d-3676-47b4e537e7df.htm">
-          <HelpTOCNode Title="Add Method (Object)" Url="html/857a7394-59af-0489-5a78-532dfbb3f721.htm" />
-          <HelpTOCNode Title="Add Method (String, Object)" Url="html/56c53f36-f16f-b4f4-934a-d98303a46601.htm" />
+  <HelpTOCNode Id="bab97e8e-7ac2-4e39-877b-7cd75aa55c2e" Title="HyperTomlProcessor" Url="html/AEBF2074.htm">
+    <HelpTOCNode Id="2378c160-7307-49c8-9d5d-4f9fd123295f" Title="DynamicToml Class" Url="html/B95EFF51.htm">
+      <HelpTOCNode Id="63ed445d-9813-4383-8da4-9cc1ce50881e" Title="DynamicToml Methods" Url="html/E2D14DB.htm">
+        <HelpTOCNode Id="911561fe-948f-41e1-9c21-a72b7177f4f0" Title="Add Method " Url="html/F6436E8E.htm">
+          <HelpTOCNode Title="Add Method (Object)" Url="html/C919FAEF.htm" />
+          <HelpTOCNode Title="Add Method (String, Object)" Url="html/F9AF0B9.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Title="CreateArray Method " Url="html/e8cfb325-ce4c-c8e8-54ee-27b357654521.htm" />
-        <HelpTOCNode Title="CreateTable Method " Url="html/85932ca4-e8ca-9e80-7235-30d10ccfdfdb.htm" />
-        <HelpTOCNode Id="1fd567fe-6798-4e2b-b7f8-bcb8b50dec37" Title="Delete Method " Url="html/2fba6793-227a-3c98-26b2-d9d12bf5d55c.htm">
-          <HelpTOCNode Title="Delete Method (Int32)" Url="html/37df4e10-cd0e-8188-7a57-76a4dc11fcec.htm" />
-          <HelpTOCNode Title="Delete Method (String)" Url="html/81cc5897-aed4-4667-ce40-824d8d18d8af.htm" />
+        <HelpTOCNode Title="CreateArray Method " Url="html/38F6097.htm" />
+        <HelpTOCNode Title="CreateTable Method " Url="html/4D96B242.htm" />
+        <HelpTOCNode Id="a73535d5-eb20-4d09-9d6e-2373353b01bf" Title="Delete Method " Url="html/86559FCC.htm">
+          <HelpTOCNode Title="Delete Method (Int32)" Url="html/79835263.htm" />
+          <HelpTOCNode Title="Delete Method (String)" Url="html/57CD08A9.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Title="Equals Method " Url="html/b98e34a1-defc-0166-d6d3-b0f214bf439f.htm" />
-        <HelpTOCNode Title="GetDynamicMemberNames Method " Url="html/15478575-a67a-5de2-93d3-263b5b83fc82.htm" />
-        <HelpTOCNode Title="GetHashCode Method " Url="html/0d3734c7-56c8-3961-b188-2d70f4e0f926.htm" />
-        <HelpTOCNode Id="ab232fc5-218a-4e1f-bf12-522435e045b5" Title="IsDefined Method " Url="html/6d588eee-104c-bf0d-129e-0142f72f98d5.htm">
-          <HelpTOCNode Title="IsDefined Method (Int32)" Url="html/020e2e7a-ab9b-a7b1-c01a-8fc84c5f8940.htm" />
-          <HelpTOCNode Title="IsDefined Method (String)" Url="html/a66660a8-58a0-50e8-5cb2-ab75b97664bc.htm" />
+        <HelpTOCNode Title="Equals Method " Url="html/C2677F89.htm" />
+        <HelpTOCNode Title="GetDynamicMemberNames Method " Url="html/D5040369.htm" />
+        <HelpTOCNode Title="GetHashCode Method " Url="html/134459EB.htm" />
+        <HelpTOCNode Id="c17c19bc-49b3-4446-9707-705a31f45387" Title="IsDefined Method " Url="html/8BBE782C.htm">
+          <HelpTOCNode Title="IsDefined Method (Int32)" Url="html/12F09261.htm" />
+          <HelpTOCNode Title="IsDefined Method (String)" Url="html/3E219CEF.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="72ec7bf8-8967-49cb-9b44-607398a37671" Title="Parse Method " Url="html/59fb1c29-c657-f27d-fbbd-daefcb45e1e6.htm">
-          <HelpTOCNode Title="Parse Method (IEnumerable(Char))" Url="html/6e2cc45b-16cf-58a8-302e-ade77e86bf5e.htm" />
-          <HelpTOCNode Title="Parse Method (Stream)" Url="html/68d17e60-970c-d83d-057e-5e92c0aa3249.htm" />
-          <HelpTOCNode Title="Parse Method (TextReader)" Url="html/73c5eda7-d9c2-1642-7dce-2ec156a05b09.htm" />
+        <HelpTOCNode Id="d353a628-1eae-4d97-87ea-538f84204ae4" Title="Parse Method " Url="html/A776AFCA.htm">
+          <HelpTOCNode Title="Parse Method (Toml, IEnumerable(Char))" Url="html/12D74D3B.htm" />
+          <HelpTOCNode Title="Parse Method (Toml, Stream)" Url="html/91028BD9.htm" />
+          <HelpTOCNode Title="Parse Method (Toml, TextReader)" Url="html/A90C2E08.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Title="ToString Method " Url="html/cfaaab44-c3ab-6e96-c591-1b707441cf9f.htm" />
-        <HelpTOCNode Title="TryConvert Method " Url="html/87cda159-3eff-6d0b-15d0-b8ab5a265591.htm" />
-        <HelpTOCNode Title="TryGetIndex Method " Url="html/4567c082-92c7-c912-c539-4f748da65f94.htm" />
-        <HelpTOCNode Title="TryGetMember Method " Url="html/ebad390e-adf0-6774-7559-b14ec2423fca.htm" />
-        <HelpTOCNode Title="TryInvoke Method " Url="html/5ca8f59c-9b1f-1c0b-2596-10e064a7f05f.htm" />
-        <HelpTOCNode Title="TryInvokeMember Method " Url="html/7f243b72-fb1c-f310-fc84-15852ccc049c.htm" />
-        <HelpTOCNode Title="TrySetIndex Method " Url="html/a7ed76b3-2a0f-7894-3769-b1d5b2f07177.htm" />
-        <HelpTOCNode Title="TrySetMember Method " Url="html/3b981d19-2d63-df6a-12a2-06e656993d3d.htm" />
-        <HelpTOCNode Id="6c7f91bc-c4a6-4b75-8ba0-afd6ef93d61d" Title="WriteTo Method " Url="html/1a816f03-876c-c526-b96b-3a11c483d4c5.htm">
-          <HelpTOCNode Title="WriteTo Method (Stream)" Url="html/fd980f5b-0bac-57c5-d330-e8a44a68180a.htm" />
-          <HelpTOCNode Title="WriteTo Method (TextWriter)" Url="html/852b3ab8-deec-86cd-a782-0388b58d9d30.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/C4510DA2.htm" />
+        <HelpTOCNode Title="TryConvert Method " Url="html/EA21204A.htm" />
+        <HelpTOCNode Title="TryGetIndex Method " Url="html/94D77055.htm" />
+        <HelpTOCNode Title="TryGetMember Method " Url="html/2DC5E2A7.htm" />
+        <HelpTOCNode Title="TryInvoke Method " Url="html/A09B566D.htm" />
+        <HelpTOCNode Title="TryInvokeMember Method " Url="html/62C47069.htm" />
+        <HelpTOCNode Title="TrySetIndex Method " Url="html/94D142E1.htm" />
+        <HelpTOCNode Title="TrySetMember Method " Url="html/2CFA079B.htm" />
+        <HelpTOCNode Id="8e1dced3-5807-4c8d-be06-3167388bc81d" Title="WriteTo Method " Url="html/7488B179.htm">
+          <HelpTOCNode Title="WriteTo Method (Toml, Stream)" Url="html/D0AC8CF0.htm" />
+          <HelpTOCNode Title="WriteTo Method (Toml, TextWriter)" Url="html/191F6C58.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="50aa16af-60b0-4ce2-8d11-9e9cb1e4f7a6" Title="DynamicToml Properties" Url="html/ad7031b9-2a59-1e60-b01c-46cfec34fdb1.htm">
-        <HelpTOCNode Title="IsArray Property " Url="html/a7c9b10c-cbb3-0027-268b-50c47770190a.htm" />
-        <HelpTOCNode Title="IsObject Property " Url="html/995812c1-5170-8a87-311f-b5ab55123700.htm" />
-      </HelpTOCNode>
-    </HelpTOCNode>
-    <HelpTOCNode Id="8cdf1e74-64d7-4001-b0a8-2cd5890dbea1" Title="TomlConvert Class" Url="html/7053d68f-8f8d-a6f9-33a8-2420868df887.htm">
-      <HelpTOCNode Id="1a28317d-e26f-47d6-9ef7-225746a3791d" Title="TomlConvert Methods" Url="html/089c2f2b-ca95-4688-7517-f225da3501c2.htm">
-        <HelpTOCNode Id="e110d035-dbb2-4feb-869e-732fd8eb0682" Title="DeserializeObject Method " Url="html/427e99a0-b47d-ec00-e711-ae0d8e1f1027.htm">
-          <HelpTOCNode Title="DeserializeObject(T) Method (IEnumerable(Char), Func(DataContractJsonSerializer))" Url="html/740d66bc-82ae-93cb-6387-8aa103b14cc4.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (IEnumerable(Char), DataContractJsonSerializerSettings)" Url="html/f7388ac6-a86b-390b-806f-7d3f8d37fc6a.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (Stream, Func(DataContractJsonSerializer))" Url="html/681ead69-a630-f836-ebb9-8e9a2332d906.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (Stream, DataContractJsonSerializerSettings)" Url="html/a18d6f13-54c9-581a-08ce-558de27a602f.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (TextReader, Func(DataContractJsonSerializer))" Url="html/3f080444-4805-2f72-b834-158f0da33499.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (TextReader, DataContractJsonSerializerSettings)" Url="html/95f38e67-8a5c-6d36-8b77-bad3ecd7caba.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (XElement, Func(DataContractJsonSerializer))" Url="html/d6c95693-03da-2f70-85d9-299c5d89f57b.htm" />
-          <HelpTOCNode Title="DeserializeObject(T) Method (XElement, DataContractJsonSerializerSettings)" Url="html/bd14c23b-eee7-ee11-f94c-1a29ce1f7730.htm" />
-        </HelpTOCNode>
-        <HelpTOCNode Id="e7704a20-73ff-4fa6-96f4-541bb5d42c46" Title="DeserializeXElement Method " Url="html/03bd5ce3-7346-c882-2685-4533713288c4.htm">
-          <HelpTOCNode Title="DeserializeXElement Method (IEnumerable(Char))" Url="html/9912d578-8352-366d-188c-a90b3111bf54.htm" />
-          <HelpTOCNode Title="DeserializeXElement Method (Stream)" Url="html/7654011c-7752-db25-f625-2df9a169e87c.htm" />
-          <HelpTOCNode Title="DeserializeXElement Method (TextReader)" Url="html/47976950-6e5c-5ad5-9838-d28009ac0f17.htm" />
-        </HelpTOCNode>
-        <HelpTOCNode Id="7e5a875b-169a-4995-8644-d9f81c2dfcc7" Title="SerializeObject Method " Url="html/cbb9d60a-8c16-5532-505c-35048270745f.htm">
-          <HelpTOCNode Title="SerializeObject Method (Object, Func(DataContractJsonSerializer))" Url="html/cdf40b15-9185-2068-33ed-397d66f7b4b2.htm" />
-          <HelpTOCNode Title="SerializeObject Method (Object, DataContractJsonSerializerSettings)" Url="html/b908752a-3651-7f7e-408c-e19ef2ee349b.htm" />
-          <HelpTOCNode Title="SerializeObject Method (Stream, Object, Func(DataContractJsonSerializer))" Url="html/42a11f98-907a-80a0-3bb2-9f2c91f297bc.htm" />
-          <HelpTOCNode Title="SerializeObject Method (Stream, Object, DataContractJsonSerializerSettings)" Url="html/2812b556-34ca-dd39-18f2-1f122ab63309.htm" />
-          <HelpTOCNode Title="SerializeObject Method (TextWriter, Object, Func(DataContractJsonSerializer))" Url="html/24fcbb4b-aa3a-47d3-95ba-d28aabf0b509.htm" />
-          <HelpTOCNode Title="SerializeObject Method (TextWriter, Object, DataContractJsonSerializerSettings)" Url="html/a2d5f201-ea81-3f9c-c21d-f1858debbf25.htm" />
-        </HelpTOCNode>
-        <HelpTOCNode Id="c560e656-78b8-4704-982d-f10aafbdbf1a" Title="SerializeXElement Method " Url="html/31c1469e-26e3-1219-58d1-1d7627f5f973.htm">
-          <HelpTOCNode Title="SerializeXElement Method (XElement)" Url="html/4c96eb58-b3bf-853d-4f56-620d2c075fa2.htm" />
-          <HelpTOCNode Title="SerializeXElement Method (Stream, XElement)" Url="html/e0f92a60-2e67-8757-948d-ca852ca8fc7f.htm" />
-          <HelpTOCNode Title="SerializeXElement Method (TextWriter, XElement)" Url="html/daf615fa-c73f-6c1b-6b9f-b850e46da00e.htm" />
-        </HelpTOCNode>
+      <HelpTOCNode Id="c7a3a9d2-8f62-4c75-b633-993f39dac2e3" Title="DynamicToml Properties" Url="html/849F4900.htm">
+        <HelpTOCNode Title="IsArray Property " Url="html/14C16592.htm" />
+        <HelpTOCNode Title="IsObject Property " Url="html/242A50E6.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
+    <HelpTOCNode Id="47cf2287-1c64-46df-9fa9-6fdbbafbc440" Title="Toml Class" Url="html/F8E7B390.htm">
+      <HelpTOCNode Id="24cf71af-7db2-4225-a09d-e97ff113d9fa" Title="Toml Methods" Url="html/FDE5038.htm">
+        <HelpTOCNode Id="1bac4c78-1e82-45d1-a505-7578a1b44f35" Title="DeserializeObject Method " Url="html/586BBC40.htm">
+          <HelpTOCNode Title="DeserializeObject(T) Method (IEnumerable(Char), Func(DataContractJsonSerializer))" Url="html/C614B7B0.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (IEnumerable(Char), DataContractJsonSerializerSettings)" Url="html/656A1650.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (Stream, Func(DataContractJsonSerializer))" Url="html/4D607421.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (Stream, DataContractJsonSerializerSettings)" Url="html/AAB8FF86.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (TextReader, Func(DataContractJsonSerializer))" Url="html/92AF5D57.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (TextReader, DataContractJsonSerializerSettings)" Url="html/F007E8BC.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (XElement, Func(DataContractJsonSerializer))" Url="html/D7FE468D.htm" />
+          <HelpTOCNode Title="DeserializeObject(T) Method (XElement, DataContractJsonSerializerSettings)" Url="html/3556D1F2.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="4fdb29b0-7e4a-4afd-8d00-3210b28f93cf" Title="DeserializeXElement Method " Url="html/5ADEF45B.htm">
+          <HelpTOCNode Title="DeserializeXElement Method (IEnumerable(Char))" Url="html/A627D8EE.htm" />
+          <HelpTOCNode Title="DeserializeXElement Method (Stream)" Url="html/81F8530E.htm" />
+          <HelpTOCNode Title="DeserializeXElement Method (TextReader)" Url="html/81F8530F.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="fd76f4bd-ba5a-4bc1-b029-38191516f05b" Title="SerializeObject Method " Url="html/1AD356B9.htm">
+          <HelpTOCNode Title="SerializeObject Method (Object, Func(DataContractJsonSerializer))" Url="html/F1326B53.htm" />
+          <HelpTOCNode Title="SerializeObject Method (Object, DataContractJsonSerializerSettings)" Url="html/F1326B54.htm" />
+          <HelpTOCNode Title="SerializeObject Method (Stream, Object, Func(DataContractJsonSerializer))" Url="html/40232130.htm" />
+          <HelpTOCNode Title="SerializeObject Method (Stream, Object, DataContractJsonSerializerSettings)" Url="html/F1326B58.htm" />
+          <HelpTOCNode Title="SerializeObject Method (TextWriter, Object, Func(DataContractJsonSerializer))" Url="html/F1326B55.htm" />
+          <HelpTOCNode Title="SerializeObject Method (TextWriter, Object, DataContractJsonSerializerSettings)" Url="html/F1326B56.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="42398d22-a189-447a-98a4-13aad9449641" Title="SerializeXElement Method " Url="html/D2A86D32.htm">
+          <HelpTOCNode Title="SerializeXElement Method (XElement)" Url="html/A802502.htm" />
+          <HelpTOCNode Title="SerializeXElement Method (Stream, XElement)" Url="html/6AC687E3.htm" />
+          <HelpTOCNode Title="SerializeXElement Method (TextWriter, XElement)" Url="html/A802501.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="119d4c02-2033-4fc7-9f43-3fab29ccef36" Title="Toml Properties" Url="html/42D56637.htm">
+        <HelpTOCNode Title="V03 Property " Url="html/F9887717.htm" />
+        <HelpTOCNode Title="V04 Property " Url="html/F988771C.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/777B97EA.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="TomlVersion Enumeration" Url="html/7003ACA8.htm" />
   </HelpTOCNode>
 </HelpTOC>
