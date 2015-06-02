@@ -12,7 +12,7 @@ namespace HyperTomlProcessor.Test
         [TestMethod]
         public void ParseExample()
         {
-            var root = DynamicToml.Parse(Examples.Example);
+            var root = DynamicToml.Parse(Toml.V03, Examples.Example);
             Assert.AreEqual("TOML Example", root.title);
             Assert.AreEqual("Tom Preston-Werner", root.owner.name);
             Assert.AreEqual("GitHub", root.owner.organization);
@@ -42,7 +42,7 @@ namespace HyperTomlProcessor.Test
         [TestMethod]
         public void ParseHardExample()
         {
-            var root = DynamicToml.Parse(Examples.HardExample);
+            var root = DynamicToml.Parse(Toml.V03, Examples.HardExample);
             Assert.AreEqual("You'll hate me after this - #", root.the.test_string);
             Utils.SequenceEqual(root.the.hard.test_array, "] ", " # ");
             Utils.SequenceEqual(root.the.hard.test_array2, "Test #11 ]proved that", "Experiment #9 was a success");
@@ -95,7 +95,7 @@ namespace HyperTomlProcessor.Test
         {
             var dt = DynamicToml.CreateTable();
             dt.root = TestObject.Create(); // 'root' でないとデシリアライズできない
-            var obj = TomlConvert.DeserializeObject<TestObject>((XElement)dt.root);
+            var obj = Toml.DeserializeObject<TestObject>((XElement)dt.root);
             TestObject.Test(obj);
         }
     }

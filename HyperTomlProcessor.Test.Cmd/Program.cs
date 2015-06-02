@@ -10,7 +10,7 @@ namespace HyperTomlProcessor.Test.Cmd
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Toml.SerializeObject(TestObject.Create()));
+            Console.WriteLine(Toml.V04.SerializeObject(TestObject.Create()));
             Console.ReadKey();
         }
     }

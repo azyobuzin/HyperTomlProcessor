@@ -214,7 +214,7 @@ namespace HyperTomlProcessor
 
             var sign = Chars.OneOf('+', '-').Optional().Select(o => o.Case(() => "", c => c.ToString()));
             var digit = Chars.Satisfy(c => c >= '0' && c <= '9');
-            var digits = digit.Many1().Map(x => string.Concat(x));
+            var digits = digit.Many1().Select(x => string.Concat(x));
 
             var integer = from s in sign
                           from i in digits
@@ -224,7 +224,7 @@ namespace HyperTomlProcessor
                          from i in digits
                          from d in Chars.Satisfy('.').Bindr(digits)
                          from e in Chars.OneOf('e', 'E').Bindr(digits)
-                             .Optional().Map(x => x.HasValue ? ("e" + x.Value) : "")
+                             .Optional().Select(x => x.HasValue ? ("e" + x.Value) : "")
                          select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d, e));
 
             var boolv = Chars.Sequence("true").Select(_ => true)
@@ -249,14 +249,14 @@ namespace HyperTomlProcessor
                                 .Or(
                                     Chars.Sequence("+").Or(Chars.Sequence("-"))
                                         .Append(twoDigits)
-                                        .Append(Chars.Satisfy(':').Optional().Map(x => ':'))
+                                        .Append(Chars.Satisfy(':').Optional().Select(x => ':'))
                                         .Append(twoDigits)
                                 )
                                 .Optional()
                         )
                         .Optional()
                 )
-                .Map(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
+                .Select(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
 
             Parser<char, TomlValue> arrayRef = null;
             var array = Delayed.Return(() => arrayRef);
@@ -369,18 +369,16 @@ namespace HyperTomlProcessor
             var sign = Chars.OneOf('+', '-').Optional().Select(o => o.Case(() => "", c => c.ToString()));
             var digit = Chars.Satisfy(c => c >= '0' && c <= '9');
             var digits = digit.Many1();
-            var digitsWithUnderscores = digits.SepBy1(Chars.Satisfy('_').Ignore()).Map(Unfold);
+            var digitsWithUnderscores = digits.SepBy1(Chars.Satisfy('_').Ignore()).Select(Unfold);
+            var signedDigitsWithUnderscores = sign.Append(digitsWithUnderscores);
 
-            var integer = from s in sign
-                          from i in digitsWithUnderscores
-                          select new TomlValue(TomlItemType.Integer, string.Concat(s, i));
+            var integer = signedDigitsWithUnderscores.Select(x => new TomlValue(TomlItemType.Integer, string.Concat(x)));
 
-            var floatv = from s in sign
-                         from i in digitsWithUnderscores
-                         from d in Chars.Satisfy('.').Bindr(digitsWithUnderscores)
-                         from e in Chars.OneOf('e', 'E').Bindr(digitsWithUnderscores)
-                             .Optional().Map(x => x.HasValue ? ("e" + x.Value) : "")
-                         select new TomlValue(TomlItemType.Float, string.Concat(s, i, ".", d, e));
+            var floatv = Combinator.Choice(
+                signedDigitsWithUnderscores.Append(Chars.Satisfy('.')).Append(digitsWithUnderscores),
+                signedDigitsWithUnderscores.Append(Chars.Sequence(".").Append(digitsWithUnderscores).Optional())
+                    .Append(Chars.OneOf('e', 'E')).Append(signedDigitsWithUnderscores)
+            ).Select(x => new TomlValue(TomlItemType.Float, string.Concat(x)));
 
             var boolv = Chars.Sequence("true").Select(_ => true)
                 .Or(Chars.Sequence("false").Select(_ => false))
@@ -411,7 +409,7 @@ namespace HyperTomlProcessor
                         )
                         .Optional()
                 )
-                .Map(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
+                .Select(x => new TomlValue(TomlItemType.Datetime, XmlConvert.ToDateTimeOffset(string.Concat(x))));
 
             Parser<char, TomlValue> arrayRef = null;
             var array = Delayed.Return(() => arrayRef);
@@ -419,10 +417,10 @@ namespace HyperTomlProcessor
             var inlineTable = Delayed.Return(() => inlineTableRef);
 
             var key = Chars.Satisfy(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
-                .Many1().Or(basicString.Map(x => (string)x.Value));
+                .Many1().Or(basicString.Select(x => (string)x.Value));
             var value = Combinator.Choice(
                 multilineBasicString, basicString, multilineLiteralString, literalString, // 順番大事
-                datetime, integer, floatv, boolv, Combinator.Lazy(array), Combinator.Lazy(inlineTable)
+                datetime, floatv, integer, boolv, Combinator.Lazy(array), Combinator.Lazy(inlineTable)
             );
 
             inlineTableRef = key.Between(spaces, spaces)
@@ -432,7 +430,7 @@ namespace HyperTomlProcessor
                 )
                 .SepEndBy0(Chars.Satisfy(',').Ignore())
                 .Between(Chars.Satisfy('{').Ignore(), spaces.SeqIgnore(Chars.Satisfy('}')))
-                .Map(x => new TomlValue(TomlItemType.InlineTable, x));
+                .Select(x => new TomlValue(TomlItemType.InlineTable, x));
 
             var comments = comment.Between(spacesOrNewlines, spacesOrNewlines).Many0();
             var comma = Chars.Satisfy(',').Between(spacesOrNewlines, spacesOrNewlines).Ignore();
@@ -451,8 +449,8 @@ namespace HyperTomlProcessor
                 createArrayParser(Combinator.Choice(
                     multilineBasicString, basicString, multilineLiteralString, literalString)), // 順番大事
                 createArrayParser(datetime),
-                createArrayParser(integer),
                 createArrayParser(floatv),
+                createArrayParser(integer),
                 createArrayParser(boolv),
                 createArrayParser(Combinator.Lazy(array)),
                 createArrayParser(Combinator.Lazy(inlineTable))
